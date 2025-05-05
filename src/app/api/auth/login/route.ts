@@ -54,7 +54,10 @@ export async function POST(request: Request) {
         firstName: salesperson?.first_name,
         twilioNumber: salesperson?.twilio_number || null,
         lastName: salesperson?.last_name,
-        redirectTo: userRecord.role === "admin" ? "/admin" : "/salesperson",
+        redirectTo:
+          userRecord.role === "admin"
+            ? "/admin/dashboard"
+            : "/salesperson/dashboard",
       };
 
       return NextResponse.json({
