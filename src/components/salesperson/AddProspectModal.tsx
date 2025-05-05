@@ -3,8 +3,6 @@
 import { Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { useState, useEffect } from "react";
-import { Prospect, CollegeType } from "@/types/prospect";
-import { formatPhoneNumber } from "@/utils/formatters";
 import { X, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { formatPhoneNumber } from "@/utils/formatters";
 import {
   Command,
   CommandEmpty,
@@ -33,42 +32,59 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Interest, EducationLevel, Status } from "@/types/prospect";
 
-interface AddProspectModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (
-    prospect: Omit<
-      Prospect,
-      "id" | "createdAt" | "updatedAt" | "addedBy" | "assignedTo"
-    >
-  ) => void;
+export interface Student {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  address: {
+    street: string;
+    city: string;
+    state: string;
+    zip: string;
+  };
+  dateOfBirth: string;
+  educationLevel: string;
+  interests: string[];
+  preferredContactMethod: "email" | "phone" | "text";
+  notes: string;
+  status: Status;
 }
 
-const initialFormState = {
-  collegeName: "",
-  phone: "",
+interface AddStudentModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (student: Omit<Student, "id" | "createdAt" | "updatedAt">) => void;
+}
+
+const initialFormState: Student = {
+  firstName: "",
+  lastName: "",
   email: "",
+  phone: "",
   address: {
+    street: "",
     city: "",
     state: "",
     zip: "",
   },
-  county: "",
-  website: "",
-  collegeTypes: [] as CollegeType[],
-  bppeApproved: false,
-  status: "New" as const,
-  lastContact: new Date().toISOString().split("T")[0],
+  dateOfBirth: "",
+  educationLevel: "",
+  interests: [],
+  preferredContactMethod: "email",
+  notes: "",
+  status: Status.New,
 };
 
-export default function AddProspectModal({
+export default function AddStudentModal({
   isOpen,
   onClose,
   onSave,
-}: AddProspectModalProps) {
+}: AddStudentModalProps) {
   const [formData, setFormData] = useState(initialFormState);
-  const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
+  const [isInterestsDropdownOpen, setIsInterestsDropdownOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isValidPhoneNumber = (phone: string): boolean => {
@@ -80,10 +96,10 @@ export default function AddProspectModal({
     e.preventDefault();
 
     setIsSubmitting(true);
-    const loadingToast = toast.loading("Saving prospect...");
+    const loadingToast = toast.loading("Saving student...");
 
     // Validate phone number before submitting
-    if (!isValidPhoneNumber(formData.phone)) {
+    if (formData.phone && !isValidPhoneNumber(formData.phone)) {
       toast.error(
         "Please enter a valid phone number in format (XXX) XXX-XXXX",
         {
@@ -95,15 +111,13 @@ export default function AddProspectModal({
 
     try {
       await onSave(formData);
-      // Reset form to initial state
       setFormData(initialFormState);
-      // Close modal
       onClose();
-      toast.success("Prospect added successfully", {
+      toast.success("Student added successfully", {
         id: loadingToast,
       });
     } catch (error) {
-      toast.error("Failed to add prospect. Please try again.", {
+      toast.error("Failed to add student. Please try again.", {
         id: loadingToast,
       });
     } finally {
@@ -137,26 +151,24 @@ export default function AddProspectModal({
     } else {
       setFormData((prev) => ({
         ...prev,
-        [name]:
-          type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
+        [name]: value,
       }));
     }
   };
 
-  const handleTypeToggle = (type: CollegeType) => {
+  const handleInterestToggle = (interest: string) => {
     setFormData((prev) => ({
       ...prev,
-      collegeTypes: prev.collegeTypes.includes(type)
-        ? prev.collegeTypes.filter((t) => t !== type)
-        : [...prev.collegeTypes, type],
+      interests: prev.interests.includes(interest)
+        ? prev.interests.filter((i) => i !== interest)
+        : [...prev.interests, interest],
     }));
   };
 
-  // Add useEffect to reset form when modal closes
   useEffect(() => {
     if (!isOpen) {
       setFormData(initialFormState);
-      setIsTypeDropdownOpen(false);
+      setIsInterestsDropdownOpen(false);
     }
   }, [isOpen]);
 
@@ -164,83 +176,49 @@ export default function AddProspectModal({
     <ShadDialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Add New Prospect</DialogTitle>
+          <DialogTitle>Add New Student</DialogTitle>
           <DialogDescription>
-            Fill in the details below to add a new prospect to your list.
+            Fill in the details below to add a new student to the system.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="collegeName">College Name</Label>
+              <Label htmlFor="firstName">First Name</Label>
               <Input
-                id="collegeName"
-                name="collegeName"
-                value={formData.collegeName}
+                id="firstName"
+                name="firstName"
+                value={formData.firstName}
                 onChange={handleChange}
-                placeholder="Enter college name"
+                placeholder="Enter first name"
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label>College Types</Label>
-              <Popover
-                open={isTypeDropdownOpen}
-                onOpenChange={setIsTypeDropdownOpen}
-              >
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={isTypeDropdownOpen}
-                    className="w-full justify-between"
-                  >
-                    <span className="truncate">
-                      {formData.collegeTypes.length > 0
-                        ? formData.collegeTypes.join(", ")
-                        : "Select college types..."}
-                    </span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                  <Command>
-                    <CommandInput placeholder="Search college types..." />
-                    <CommandEmpty>No college type found.</CommandEmpty>
-                    <CommandGroup>
-                      {Object.values(CollegeType).map((type) => (
-                        <CommandItem
-                          key={type}
-                          onSelect={() => handleTypeToggle(type)}
-                          className="flex items-center gap-2"
-                        >
-                          <Checkbox
-                            checked={formData.collegeTypes.includes(type)}
-                            className="h-4 w-4"
-                          />
-                          {type}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-              {formData.collegeTypes.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {formData.collegeTypes.map((type) => (
-                    <Badge
-                      key={type}
-                      variant="secondary"
-                      className="cursor-pointer"
-                      onClick={() => handleTypeToggle(type)}
-                    >
-                      {type}
-                      <X className="ml-1 h-3 w-3" />
-                    </Badge>
-                  ))}
-                </div>
-              )}
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input
+                id="lastName"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                placeholder="Enter last name"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="student@example.com"
+                required
+              />
             </div>
 
             <div className="space-y-2">
@@ -253,7 +231,6 @@ export default function AddProspectModal({
                 onChange={handleChange}
                 placeholder="(555) 123-4567"
                 maxLength={14}
-                required
                 className={cn(
                   formData.phone &&
                     !isValidPhoneNumber(formData.phone) &&
@@ -268,14 +245,13 @@ export default function AddProspectModal({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="address.street">Street Address</Label>
               <Input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
+                id="address.street"
+                name="address.street"
+                value={formData.address.street}
                 onChange={handleChange}
-                placeholder="example@college.edu"
+                placeholder="Enter street address"
                 required
               />
             </div>
@@ -317,45 +293,142 @@ export default function AddProspectModal({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="county">County</Label>
+              <Label htmlFor="dateOfBirth">Date of Birth</Label>
               <Input
-                id="county"
-                name="county"
-                value={formData.county}
+                id="dateOfBirth"
+                name="dateOfBirth"
+                type="date"
+                value={formData.dateOfBirth}
                 onChange={handleChange}
-                placeholder="Enter county"
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="website">Website</Label>
-              <Input
-                id="website"
-                name="website"
-                type="url"
-                value={formData.website}
+              <Label htmlFor="educationLevel">Education Level</Label>
+              <select
+                id="educationLevel"
+                name="educationLevel"
+                value={formData.educationLevel}
                 onChange={handleChange}
-                placeholder="https://example.com"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 required
-              />
+              >
+                <option value="">Select education level</option>
+                {Object.values(EducationLevel).map((level) => (
+                  <option key={level} value={level}>
+                    {level}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="bppeApproved"
-                name="bppeApproved"
-                checked={formData.bppeApproved}
-                onCheckedChange={(checked) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    bppeApproved: checked as boolean,
-                  }))
-                }
-              />
-              <Label htmlFor="bppeApproved" className="text-sm font-normal">
-                BPPE Approved
+            <div className="space-y-2">
+              <Label>Interests</Label>
+              <Popover
+                open={isInterestsDropdownOpen}
+                onOpenChange={setIsInterestsDropdownOpen}
+              >
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={isInterestsDropdownOpen}
+                    className="w-full justify-between"
+                  >
+                    <span className="truncate">
+                      {formData.interests.length > 0
+                        ? formData.interests.join(", ")
+                        : "Select interests..."}
+                    </span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                  <Command>
+                    <CommandInput placeholder="Search interests..." />
+                    <CommandEmpty>No interest found.</CommandEmpty>
+                    <CommandGroup>
+                      {Object.values(Interest).map((interest) => (
+                        <CommandItem
+                          key={interest}
+                          onSelect={() => handleInterestToggle(interest)}
+                          className="flex items-center gap-2"
+                        >
+                          <Checkbox
+                            checked={formData.interests.includes(interest)}
+                            className="h-4 w-4"
+                          />
+                          {interest}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              {formData.interests.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {formData.interests.map((interest) => (
+                    <Badge
+                      key={interest}
+                      variant="secondary"
+                      className="cursor-pointer"
+                      onClick={() => handleInterestToggle(interest)}
+                    >
+                      {interest}
+                      <X className="ml-1 h-3 w-3" />
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="preferredContactMethod">
+                Preferred Contact Method
               </Label>
+              <select
+                id="preferredContactMethod"
+                name="preferredContactMethod"
+                value={formData.preferredContactMethod}
+                onChange={handleChange}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                required
+              >
+                <option value="email">Email</option>
+                <option value="phone">Phone</option>
+                <option value="text">Text Message</option>
+              </select>
+            </div>
+
+            <div className="space-y-2 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="notes">Notes</Label>
+                <Input
+                  id="notes"
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleChange}
+                  placeholder="Additional notes about the student"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <select
+                  id="status"
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  required
+                >
+                  {Object.values(Status).map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
@@ -375,7 +448,7 @@ export default function AddProspectModal({
                   Saving...
                 </>
               ) : (
-                "Save Prospect"
+                "Save Student"
               )}
             </Button>
           </div>

@@ -1,22 +1,40 @@
 export interface Address {
+  street: string;
   city: string;
   state: string;
   zip: string;
 }
 
-export enum CollegeType {
-  BEAUTY_SCHOOL = 'Beauty School',
-  NURSING_SCHOOL = 'Nursing School',
-  MASSAGE_THERAPY_SCHOOL = 'Massage Therapy School',
-  MEDICAL_ASSISTANT_SCHOOL = 'Medical Assistant School',
-  DENTAL_ASSISTANT_SCHOOL = 'Dental Assistant School',
-  PMU_MICROBLADING_SCHOOL = 'PMU/Microblading School',
-  TECH_BOOTCAMP = 'Tech Bootcamp',
-  HEALTH_SCHOOL = 'Health School',
-  LANGUAGE_SCHOOL = 'Language School',
-  REAL_ESTATE_SCHOOL = 'Real Estate School',
-  TRUCK_DRIVING_SCHOOL = 'Truck Driving School',
-  OTHER_VOCATIONAL_TRADE_SCHOOL = 'Other Vocational Trade School'
+export enum EducationLevel {
+  HIGH_SCHOOL = "High School",
+  ASSOCIATES = "Associates Degree",
+  BACHELORS = "Bachelor's Degree",
+  MASTERS = "Master's Degree",
+  PHD = "Doctorate",
+}
+
+export enum Interest {
+  BUSINESS = "Business",
+  COMPUTER_SCIENCE = "Computer Science",
+  ENGINEERING = "Engineering",
+  HEALTHCARE = "Healthcare",
+  ARTS = "Arts",
+  EDUCATION = "Education",
+  LAW = "Law",
+  SCIENCE = "Science",
+  SOCIAL_SCIENCE = "Social Science",
+  OTHER = "Other",
+}
+
+export enum Status {
+  New = "New",
+  Inquired = "Inquired",
+  Applied = "Applied",
+  Enrolled = "Enrolled",
+  InProgress = "In Progress",
+  Graduated = "Graduated",
+  Withdrawn = "Withdrawn",
+  OnHold = "On Hold"
 }
 
 export interface User {
@@ -29,18 +47,21 @@ export interface User {
 
 export interface Prospect {
   id: string;
-  collegeName: string;
+  fullName: string;
+  firstName: string;
+  lastName: string;
   phone: string;
   email: string;
   address: Address;
-  county: string;
-  website: string;
-  collegeTypes: CollegeType[];
-  bppeApproved: boolean;
-  status: 'New' | 'Contacted' | 'Qualified' | 'Proposal' | 'Negotiation' | 'Closed';
+  educationLevel: EducationLevel;
+  dateOfBirth: string;
+  preferredContactMethod: string;
+  interests: string[];
+  notes: string;
+  status: Status;
   lastContact: string;
   createdAt: string;
   updatedAt: string;
   addedBy: User;
   assignedTo: User;
-} 
+}

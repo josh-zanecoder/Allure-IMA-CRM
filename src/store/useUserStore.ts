@@ -4,17 +4,17 @@ import { UserStore } from "@/types/user";
 
 export const useUserStore = create<UserStore>((set) => ({
   userRole: null,
-  colleges: [],
+  students: [],
   userData: null,
   getUser: async () => {
     try {
-      const [userDataResponse, collegesResponse] = await Promise.all([
+      const [userDataResponse, studentsResponse] = await Promise.all([
         axios.get("/api/auth/authenticated"),
-        axios.get("/api/colleges"),
+        axios.get("/api/students"),
       ]);
       set({
         userRole: userDataResponse.data.userData.role,
-        colleges: collegesResponse.data.colleges,
+        students: studentsResponse.data.students,
         userData: userDataResponse.data.userData,
       });
     } catch (error) {
@@ -32,8 +32,8 @@ export const useUserStore = create<UserStore>((set) => ({
       }
     }
   },
-  fetchColleges: async () => {
-    const res = await axios.get("/api/colleges");
-    set({ colleges: res.data.colleges });
+  fetchStudents: async () => {
+    const res = await axios.get("/api/students");
+    set({ students: res.data.students });
   },
 }));

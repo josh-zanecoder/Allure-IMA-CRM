@@ -4,17 +4,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import { Prospect } from "@/types/prospect";
-import AddProspectModal from "@/components/salesperson/AddProspectModal";
-import {
-  formatAddress,
-  formatPhoneNumber,
-  formatWebsite,
-} from "@/utils/formatters";
+import AddStudentModal, {
+  Student,
+} from "@/components/salesperson/AddProspectModal";
+import { formatAddress, formatPhoneNumber } from "@/utils/formatters";
 import { useCallStore } from "@/store/useCallStore";
 import { useDebouncedCallback } from "use-debounce";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { Plus, Phone, Mail, MapPin, Globe, User, Search } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import { useUserStore } from "@/store/useUserStore";
 
@@ -66,7 +64,7 @@ export default function ProspectsPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [progress, setProgress] = useState(0);
-  const fetchColleges = useUserStore((state) => state.fetchColleges);
+  const fetchStudents = useUserStore((state) => state.fetchStudents);
 
   // Define callbacks using useCallback
   const handleRowClick = useCallback(
@@ -139,38 +137,53 @@ export default function ProspectsPage() {
   }, [isLoading]);
 
   const handleAddProspect = async (
-    newProspect: Omit<
-      Prospect,
-      "id" | "createdAt" | "updatedAt" | "addedBy" | "assignedTo"
-    >
+    newStudent: Omit<Student, "id" | "createdAt" | "updatedAt">
   ) => {
-    const loadingToast = toast.loading("Saving prospect...");
+    const loadingToast = toast.loading("Saving student...");
     try {
       const response = await fetch("/api/prospects/create", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newProspect),
+        body: JSON.stringify({
+          ...newStudent,
+          fullName: `${newStudent.firstName} ${newStudent.lastName}`,
+          firstName: newStudent.firstName,
+          lastName: newStudent.lastName,
+          phone: newStudent.phone,
+          email: newStudent.email,
+          address: newStudent.address,
+          educationLevel: newStudent.educationLevel,
+          dateOfBirth: new Date(newStudent.dateOfBirth),
+          preferredContactMethod: newStudent.preferredContactMethod,
+          interests: newStudent.interests,
+          status: "New",
+          notes: newStudent.notes || "",
+          lastContact: new Date().toISOString().split("T")[0],
+        }),
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.details || "Failed to create prospect");
+        const errorData = await response.json();
+        toast.error(errorData.error || "Failed to create student", {
+          id: loadingToast,
+        });
+        return;
       }
 
-      const createdProspect = await response.json();
-      setProspects((prev) => [...prev, createdProspect]);
+      const createdStudent = await response.json();
+      setProspects((prev) => [...prev, createdStudent]);
       setIsModalOpen(false);
-      toast.success("Prospect added successfully", {
+      toast.success("Student added successfully", {
         id: loadingToast,
       });
-      await fetchColleges();
+      await fetchStudents();
     } catch (error) {
-      console.error("Error creating prospect:", error);
-      // TODO: Show error notification
-      alert(
-        error instanceof Error ? error.message : "Failed to create prospect"
+      console.error("Error creating student:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create student",
+        { id: loadingToast }
       );
     }
   };
@@ -185,8 +198,8 @@ export default function ProspectsPage() {
   };
 
   const handleSendEmail = (prospect: Prospect) => {
-    const subject = `Regarding ${prospect.collegeName}`;
-    const body = `Hello,\n\nI hope this email finds you well. I wanted to reach out regarding ${prospect.collegeName}.\n\nBest regards,\n${prospect.assignedTo.email}`;
+    const subject = `Regarding ${prospect.fullName}`;
+    const body = `Hello,\n\nI hope this email finds you well. I wanted to reach out regarding ${prospect.fullName}.\n\nBest regards,\n${prospect.assignedTo.email}`;
 
     const mailtoLink = `mailto:${prospect.email}?subject=${encodeURIComponent(
       subject
@@ -273,14 +286,16 @@ export default function ProspectsPage() {
                 <TableRow>
                   <TableHead className="w-5"></TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>College Name</TableHead>
+                  <TableHead>Full Name</TableHead>
                   <TableHead className="hidden sm:table-cell">
                     Contact
                   </TableHead>
                   <TableHead className="hidden md:table-cell">
                     Location
                   </TableHead>
-                  <TableHead className="hidden md:table-cell">BPPE</TableHead>
+                  <TableHead className="hidden md:table-cell">
+                    Education Level
+                  </TableHead>
                   <TableHead className="hidden sm:table-cell text-right">
                     Last Contact
                   </TableHead>
@@ -340,7 +355,7 @@ export default function ProspectsPage() {
                           Location
                         </TableHead>
                         <TableHead className="hidden md:table-cell">
-                          BPPE
+                          Education Level
                         </TableHead>
                         <TableHead className="hidden sm:table-cell text-right">
                           Last Contact
@@ -362,7 +377,7 @@ export default function ProspectsPage() {
                           <TableCell>
                             <div className="flex flex-col">
                               <span className="font-medium">
-                                {prospect.collegeName}
+                                {prospect.fullName}
                               </span>
                               <span className="text-sm text-muted-foreground">
                                 {prospect.email}
@@ -386,27 +401,22 @@ export default function ProspectsPage() {
                           <TableCell className="hidden md:table-cell">
                             <div className="flex flex-col">
                               <span>{formatAddress(prospect.address)}</span>
-                              <span className="text-sm text-muted-foreground">
-                                {prospect.county} County
-                              </span>
                             </div>
                           </TableCell>
                           <TableCell className="hidden md:table-cell">
                             <Badge
                               variant={
-                                prospect.bppeApproved
+                                prospect.educationLevel
                                   ? "outline"
                                   : "destructive"
                               }
                               className={
-                                prospect.bppeApproved
+                                prospect.educationLevel
                                   ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-500"
                                   : ""
                               }
                             >
-                              {prospect.bppeApproved
-                                ? "Approved"
-                                : "Not Approved"}
+                              {prospect.educationLevel}
                             </Badge>
                           </TableCell>
                           <TableCell className="hidden sm:table-cell text-right">
@@ -503,10 +513,10 @@ export default function ProspectsPage() {
                           )
                         }
                       >
-                        {prospect.collegeName}
+                        {prospect.fullName}
                       </CardTitle>
                       <CardDescription className="text-xs">
-                        {prospect.collegeTypes.join(", ")}
+                        {prospect.educationLevel}
                       </CardDescription>
                     </div>
                     <Badge variant="outline" className="text-xs py-0.5 px-2">
@@ -538,15 +548,7 @@ export default function ProspectsPage() {
                     </div>
                     <div className="flex items-center gap-2 text-xs">
                       <Globe className="h-4 w-4 text-muted-foreground" />
-                      <a
-                        href={prospect.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline break-all"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {formatWebsite(prospect.website)}
-                      </a>
+                      <span>{prospect.dateOfBirth}</span>
                     </div>
                     <div className="flex items-center gap-2 text-xs">
                       <User className="h-4 w-4 text-muted-foreground" />
@@ -557,17 +559,15 @@ export default function ProspectsPage() {
                   <div className="flex flex-col gap-2 pt-2">
                     <Badge
                       variant={
-                        prospect.bppeApproved ? "default" : "destructive"
+                        prospect.educationLevel ? "default" : "destructive"
                       }
                       className={
-                        prospect.bppeApproved
+                        prospect.educationLevel
                           ? "bg-green-100 text-green-800 text-xs"
                           : "text-xs"
                       }
                     >
-                      {prospect.bppeApproved
-                        ? "BPPE Approved"
-                        : "Not BPPE Approved"}
+                      {prospect.educationLevel}
                     </Badge>
                     <Button
                       variant="ghost"
@@ -594,7 +594,7 @@ export default function ProspectsPage() {
         </>
       )}
 
-      <AddProspectModal
+      <AddStudentModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleAddProspect}

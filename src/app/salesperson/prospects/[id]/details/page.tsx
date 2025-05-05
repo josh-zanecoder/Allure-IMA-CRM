@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Prospect, CollegeType } from "@/types/prospect";
+import { Prospect, EducationLevel, Interest, Status } from "@/types/prospect";
 import { formatAddress, formatPhoneNumber } from "@/utils/formatters";
 import { useRouter } from "next/navigation";
 import {
@@ -14,8 +14,10 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { format, parseISO } from "date-fns";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,17 +33,35 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandInput,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+} from "@/components/ui/command";
+import axios from "axios";
 
-const STATUS_OPTIONS = [
-  "New",
-  "Contacted",
-  "Qualified",
-  "Proposal",
-  "Negotiation",
-  "Closed",
-];
+const formatDateForDisplay = (dateString: string) => {
+  try {
+    return format(parseISO(dateString), "MMMM d, yyyy");
+  } catch (error) {
+    return dateString;
+  }
+};
 
-const COLLEGE_TYPES = Object.values(CollegeType);
+const formatDateForInput = (dateString: string) => {
+  try {
+    return format(parseISO(dateString), "yyyy-MM-dd");
+  } catch (error) {
+    return dateString;
+  }
+};
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -67,21 +87,16 @@ export default function ProspectDetailsPage({ params }: PageProps) {
 
       try {
         setIsLoading(true);
-        const response = await fetch(`/api/prospects/${id}/details`, {
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
+        const response = await axios.get(`/api/prospects/${id}/details`);
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to fetch prospect");
+        console.log("Response data:", response.data);
+
+        if (!response.data) {
+          throw new Error("Failed to fetch prospect");
         }
 
-        const data = await response.json();
-        setProspect(data);
-        setEditedProspect(data);
+        setProspect(response.data);
+        setEditedProspect(response.data);
       } catch (error) {
         console.error("Error fetching prospect:", error);
         toast.error(
@@ -109,8 +124,25 @@ export default function ProspectDetailsPage({ params }: PageProps) {
     setEditedProspect(prospect);
   };
 
-  const handleChange = (field: string, value: string | boolean) => {
+  const handleChange = (field: string, value: string | string[] | boolean) => {
     if (!editedProspect) return;
+
+    if (field === "interests") {
+      // Handle interests array
+      const interestsArray = Array.isArray(value)
+        ? value
+        : value
+            .toString()
+            .split(",")
+            .map((item) => item.trim())
+            .filter((item) => item.length > 0);
+
+      setEditedProspect({
+        ...editedProspect,
+        interests: interestsArray,
+      });
+      return;
+    }
 
     if (field === "phone") {
       const formattedPhone = formatPhoneNumber(value as string);
@@ -138,16 +170,6 @@ export default function ProspectDetailsPage({ params }: PageProps) {
     }
   };
 
-  const handleCollegeTypeToggle = (type: CollegeType) => {
-    setEditedProspect((prev) => {
-      if (!prev) return prev;
-      const types = prev.collegeTypes.includes(type)
-        ? prev.collegeTypes.filter((t) => t !== type)
-        : [...prev.collegeTypes, type];
-      return { ...prev, collegeTypes: types };
-    });
-  };
-
   const isValidPhoneNumber = (phone: string): boolean => {
     const phoneRegex = /^\(\d{3}\) \d{3}-\d{4}$/;
     return phoneRegex.test(phone);
@@ -159,37 +181,24 @@ export default function ProspectDetailsPage({ params }: PageProps) {
     const loadingToast = toast.loading("Saving prospect...");
 
     try {
-      const response = await fetch(`/api/prospects/${id}/details`, {
-        method: "PUT",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(editedProspect),
-      });
+      const response = await axios.put(
+        `/api/prospects/${id}/details`,
+        editedProspect
+      );
 
       if (response.status === 401) {
         router.push("/login");
         return;
       }
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to update prospect");
-      }
-
-      const updatedProspect = await response.json();
-      setProspect(updatedProspect);
-      setEditedProspect(updatedProspect);
+      setProspect(response.data);
+      setEditedProspect(response.data);
       setIsEditing(false);
       toast.success("Prospect updated successfully", {
         id: loadingToast,
       });
     } catch (error) {
       console.error("Error updating prospect:", error);
-      // toast.error(
-      //   error instanceof Error ? error.message : "Failed to update prospect"
-      // );
       toast.error("Failed to update prospect", {
         id: loadingToast,
       });
@@ -324,23 +333,35 @@ export default function ProspectDetailsPage({ params }: PageProps) {
             <div className="flex items-center gap-3">
               <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
               <CardTitle className="text-base sm:text-lg">
-                College Details
+                Student Details
               </CardTitle>
             </div>
           </CardHeader>
           <CardContent className="space-y-4 sm:space-y-5">
             <div className="space-y-2">
-              <Label className="text-sm sm:text-base">College Name</Label>
+              <Label className="text-sm sm:text-base">Student Name</Label>
               {isEditing ? (
-                <Input
-                  value={editedProspect.collegeName}
-                  onChange={(e) => handleChange("collegeName", e.target.value)}
-                  placeholder="Enter college name"
-                  className="text-sm sm:text-base"
-                />
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Input
+                      value={editedProspect.firstName}
+                      onChange={(e) =>
+                        handleChange("firstName", e.target.value)
+                      }
+                      placeholder="Enter first name"
+                      className="text-sm sm:text-base"
+                    />
+                    <Input
+                      value={editedProspect.lastName}
+                      onChange={(e) => handleChange("lastName", e.target.value)}
+                      placeholder="Enter last name"
+                      className="text-sm sm:text-base"
+                    />
+                  </div>
+                </>
               ) : (
                 <p className="text-sm sm:text-base text-foreground">
-                  {prospect.collegeName}
+                  {prospect.firstName} {prospect.lastName}
                 </p>
               )}
             </div>
@@ -402,31 +423,91 @@ export default function ProspectDetailsPage({ params }: PageProps) {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm sm:text-base">Website</Label>
+              <Label className="text-sm sm:text-base">Interests</Label>
               {isEditing ? (
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Globe className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
-                  </div>
-                  <Input
-                    type="url"
-                    value={editedProspect.website}
-                    onChange={(e) => handleChange("website", e.target.value)}
-                    className="pl-9 sm:pl-10 text-sm sm:text-base"
-                    placeholder="https://example.com"
-                  />
+                <div className="space-y-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className="w-full justify-between"
+                      >
+                        <span className="truncate">
+                          {editedProspect.interests?.length > 0
+                            ? `Selected: ${editedProspect.interests.join(", ")}`
+                            : "Select interests..."}
+                        </span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0">
+                      <Command>
+                        <CommandInput placeholder="Search interests..." />
+                        <CommandEmpty>No interests found.</CommandEmpty>
+                        <CommandGroup>
+                          {Object.values(Interest).map((interest) => (
+                            <CommandItem
+                              key={interest}
+                              onSelect={() => {
+                                const newInterests =
+                                  editedProspect.interests?.includes(interest)
+                                    ? editedProspect.interests.filter(
+                                        (i) => i !== interest
+                                      )
+                                    : [
+                                        ...(editedProspect.interests || []),
+                                        interest,
+                                      ];
+                                handleChange("interests", newInterests);
+                              }}
+                            >
+                              <Checkbox
+                                checked={editedProspect.interests?.includes(
+                                  interest
+                                )}
+                                className="mr-2 h-4 w-4"
+                              />
+                              {interest}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+
+                  {editedProspect.interests.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {editedProspect.interests.map((interest, index) => (
+                        <Badge
+                          key={index}
+                          variant="secondary"
+                          className="cursor-pointer flex items-center gap-1"
+                          onClick={() => {
+                            const newInterests =
+                              editedProspect.interests.filter(
+                                (i) => i !== interest
+                              );
+                            handleChange("interests", newInterests);
+                          }}
+                        >
+                          {interest}
+                          <X className="h-3 w-3" />
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ) : (
-                <div className="flex items-center">
-                  <Globe className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground mr-2" />
-                  <a
-                    href={prospect.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm sm:text-base text-primary hover:underline break-all"
-                  >
-                    {prospect.website}
-                  </a>
+                <div className="flex flex-wrap gap-2">
+                  {(prospect.interests || []).map((interest, index) => (
+                    <Badge
+                      key={index}
+                      variant="secondary"
+                      className="text-xs sm:text-sm"
+                    >
+                      {interest}
+                    </Badge>
+                  ))}
                 </div>
               )}
             </div>
@@ -448,6 +529,14 @@ export default function ProspectDetailsPage({ params }: PageProps) {
               <Label className="text-sm sm:text-base">Address</Label>
               {isEditing ? (
                 <div className="space-y-3">
+                  <Input
+                    placeholder="Street"
+                    value={editedProspect.address.street}
+                    onChange={(e) =>
+                      handleChange("address.street", e.target.value)
+                    }
+                    className="text-sm sm:text-base"
+                  />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Input
                       placeholder="City"
@@ -482,27 +571,8 @@ export default function ProspectDetailsPage({ params }: PageProps) {
                     <p className="text-sm sm:text-base text-foreground">
                       {formatAddress(prospect.address)}
                     </p>
-                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                      {prospect.county} County
-                    </p>
                   </div>
                 </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm sm:text-base">County</Label>
-              {isEditing ? (
-                <Input
-                  value={editedProspect.county}
-                  onChange={(e) => handleChange("county", e.target.value)}
-                  placeholder="Enter county"
-                  className="text-sm sm:text-base"
-                />
-              ) : (
-                <p className="text-sm sm:text-base text-foreground">
-                  {prospect.county}
-                </p>
               )}
             </div>
 
@@ -510,14 +580,14 @@ export default function ProspectDetailsPage({ params }: PageProps) {
               <Label className="text-sm sm:text-base">Status</Label>
               {isEditing ? (
                 <Select
-                  value={editedProspect.status}
+                  value={String(editedProspect.status)}
                   onValueChange={(value) => handleChange("status", value)}
                 >
                   <SelectTrigger className="text-sm sm:text-base">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    {STATUS_OPTIONS.map((status) => (
+                    {Object.values(Status).map((status) => (
                       <SelectItem key={status} value={status}>
                         {status}
                       </SelectItem>
@@ -535,87 +605,73 @@ export default function ProspectDetailsPage({ params }: PageProps) {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm sm:text-base">College Types</Label>
+              <Label className="text-sm sm:text-base">Education Level</Label>
               {isEditing ? (
-                <div className="flex flex-wrap gap-2">
-                  {COLLEGE_TYPES.map((type) => (
-                    <Button
-                      key={type}
-                      variant={
-                        editedProspect.collegeTypes.includes(
-                          type as CollegeType
-                        )
-                          ? "default"
-                          : "outline"
-                      }
-                      size="sm"
-                      onClick={() =>
-                        handleCollegeTypeToggle(type as CollegeType)
-                      }
-                      className="text-xs sm:text-sm"
-                    >
-                      {type}
-                    </Button>
-                  ))}
-                </div>
+                <Select
+                  value={editedProspect.educationLevel}
+                  onValueChange={(value) =>
+                    handleChange("educationLevel", value)
+                  }
+                >
+                  <SelectTrigger className="text-sm sm:text-base">
+                    <SelectValue placeholder="Select education level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.values(EducationLevel).map((level) => (
+                      <SelectItem key={level} value={level}>
+                        {level}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               ) : (
-                <div className="flex flex-wrap gap-2">
-                  {prospect.collegeTypes?.map((type) => (
-                    <Badge
-                      key={type}
-                      variant="secondary"
-                      className="text-xs sm:text-sm"
-                    >
-                      {type}
-                    </Badge>
-                  ))}
+                <div className="flex items-center">
+                  <Badge variant="secondary" className="text-xs sm:text-sm">
+                    {prospect.educationLevel}
+                  </Badge>
                 </div>
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm sm:text-base">BPPE Approval</Label>
-              {isEditing ? (
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="bppeApproved"
-                    checked={editedProspect.bppeApproved}
-                    onCheckedChange={(checked) =>
-                      handleChange("bppeApproved", checked === true)
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm sm:text-base">Date of Birth</Label>
+                {isEditing ? (
+                  <Input
+                    type="date"
+                    value={formatDateForInput(editedProspect.dateOfBirth)}
+                    onChange={(e) =>
+                      handleChange("dateOfBirth", e.target.value)
                     }
+                    className="text-sm sm:text-base w-auto"
                   />
-                  <Label
-                    htmlFor="bppeApproved"
-                    className="text-sm sm:text-base text-muted-foreground"
-                  >
-                    BPPE Approved
-                  </Label>
-                </div>
-              ) : (
-                <div className="flex items-center">
-                  {prospect.bppeApproved ? (
-                    <>
-                      <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-500 mr-2" />
-                      <Badge
-                        variant="outline"
-                        className="border-emerald-500/20 bg-emerald-500/10 text-emerald-500 text-xs sm:text-sm"
-                      >
-                        Approved
-                      </Badge>
-                    </>
-                  ) : (
-                    <>
-                      <XCircle className="h-4 w-4 sm:h-5 sm:w-5 text-destructive mr-2" />
-                      <Badge
-                        variant="outline"
-                        className="border-destructive/20 bg-destructive/10 text-destructive text-xs sm:text-sm"
-                      >
-                        Not Approved
-                      </Badge>
-                    </>
-                  )}
-                </div>
-              )}
+                ) : (
+                  <div className="flex items-center">
+                    <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground mr-2" />
+                    <span className="text-sm sm:text-base text-foreground">
+                      {formatDateForDisplay(prospect.dateOfBirth)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm sm:text-base">Notes</Label>
+                {isEditing ? (
+                  <Input
+                    value={editedProspect.notes}
+                    onChange={(e) => handleChange("notes", e.target.value)}
+                    placeholder="Add notes..."
+                    className="text-sm sm:text-base"
+                  />
+                ) : (
+                  <div className="flex items-center">
+                    <span className="text-sm sm:text-base text-foreground">
+                      {prospect.notes || "No notes"}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>

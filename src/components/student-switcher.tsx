@@ -28,10 +28,10 @@ const PROSPECT_TABS = [
   "activities",
 ] as const;
 
-export function CollegeSwitcher({
-  colleges,
+export function StudentSwitcher({
+  students,
 }: {
-  colleges: {
+  students: {
     id: string;
     name: string;
     email: string;
@@ -42,29 +42,29 @@ export function CollegeSwitcher({
   const pathname = usePathname();
 
   // Find active college and tab based on URL
-  const { activeCollege, activeTab } = React.useMemo(() => {
+  const { activeStudent, activeTab } = React.useMemo(() => {
     const pathParts = pathname.split("/");
     const isProspectPage = pathParts.includes("prospects");
-    if (!isProspectPage) return { activeCollege: null, activeTab: null };
+    if (!isProspectPage) return { activeStudent: null, activeTab: null };
 
-    const collegeIdIndex = pathParts.indexOf("prospects") + 1;
-    const collegeId = pathParts[collegeIdIndex];
-    const tab = pathParts[collegeIdIndex + 1] as (typeof PROSPECT_TABS)[number];
+    const studentIdIndex = pathParts.indexOf("prospects") + 1;
+    const studentId = pathParts[studentIdIndex];
+    const tab = pathParts[studentIdIndex + 1] as (typeof PROSPECT_TABS)[number];
 
     return {
-      activeCollege: colleges.find((c) => c.id === collegeId) || null,
+      activeStudent: students.find((s) => s.id === studentId) || null,
       activeTab: PROSPECT_TABS.includes(tab) ? tab : "details",
     };
-  }, [pathname, colleges]);
+  }, [pathname, students]);
 
-  const defaultCollege = {
+  const defaultStudent = {
     id: "",
-    name: "EdTracts",
+    name: "Allure IMA",
     email: "System",
     logo: Command,
   };
 
-  const currentCollege = activeCollege || defaultCollege;
+  const currentStudent = activeStudent || defaultStudent;
 
   return (
     <SidebarMenu>
@@ -76,18 +76,18 @@ export function CollegeSwitcher({
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                <currentCollege.logo className="size-4" />
+                <currentStudent.logo className="size-4" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">
-                  {currentCollege.name}
+                  {currentStudent.name}
                 </span>
-                <span className="truncate text-xs">{currentCollege.email}</span>
+                <span className="truncate text-xs">{currentStudent.email}</span>
               </div>
-              {colleges.length > 0 && <ChevronsUpDown className="ml-auto" />}
+              {students.length > 0 && <ChevronsUpDown className="ml-auto" />}
             </SidebarMenuButton>
           </DropdownMenuTrigger>
-          {colleges.length > 0 && (
+          {students.length > 0 && (
             <DropdownMenuContent
               className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
               align="start"
@@ -97,19 +97,19 @@ export function CollegeSwitcher({
               <DropdownMenuLabel className="text-muted-foreground text-xs">
                 Colleges
               </DropdownMenuLabel>
-              {colleges.map((college, index) => (
+              {students.map((student, index) => (
                 <Link
-                  key={college.id}
-                  href={`/salesperson/prospects/${college.id}/${
+                  key={student.id}
+                  href={`/salesperson/prospects/${student.id}/${
                     activeTab || "details"
                   }`}
                   onClick={() => isMobile && setOpenMobile(false)}
                 >
                   <DropdownMenuItem className="gap-2 p-2">
                     <div className="flex size-6 items-center justify-center rounded-md border">
-                      <college.logo className="size-3.5 shrink-0" />
+                      <student.logo className="size-3.5 shrink-0" />
                     </div>
-                    {college.name}
+                    {student.name}
                     <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
                   </DropdownMenuItem>
                 </Link>
@@ -121,7 +121,7 @@ export function CollegeSwitcher({
                     <Plus className="size-4" />
                   </div>
                   <div className="text-muted-foreground font-medium">
-                    Add college
+                    Add student
                   </div>
                 </DropdownMenuItem>
               </Link>

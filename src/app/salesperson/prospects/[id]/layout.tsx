@@ -40,7 +40,7 @@ export default function ProspectLayout({ children, params }: LayoutProps) {
 
   const tabs = [
     { name: "Details", href: `/salesperson/prospects/${id}/details` },
-    { name: "Members", href: `/salesperson/prospects/${id}/members` },
+    // { name: "Members", href: `/salesperson/prospects/${id}/members` },
     { name: "Reminders", href: `/salesperson/prospects/${id}/reminders` },
     { name: "Activities", href: `/salesperson/prospects/${id}/activities` },
   ];

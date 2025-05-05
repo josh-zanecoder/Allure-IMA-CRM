@@ -13,20 +13,24 @@ export type UserData = {
   // Add other properties as needed
 };
 
-export type College = {
+export type Student = {
   id: string;
-  collegeName: string;
+  fullName: string;
+  firstName: string;
+  lastName: string;
   phone: string;
   email: string;
   address: {
+    street: string;
     city: string;
     state: string;
     zip: string;
   };
-  country: string;
-  website: string;
-  collegeType: [];
-  bppeApproved: boolean;
+  educationLevel: string;
+  dateOfBirth: string;
+  preferredContactMethod: string;
+  interests: string[];
+  notes: string;
   status: string;
   addedBy: {
     id: string;
@@ -50,8 +54,8 @@ export type College = {
 
 export type UserStore = {
   userRole: string | null;
-  colleges: College[];
+  students: Student[];
   userData: UserData | null;
   getUser: () => Promise<void>;
-  fetchColleges: () => Promise<void>;
+  fetchStudents: () => Promise<void>;
 };

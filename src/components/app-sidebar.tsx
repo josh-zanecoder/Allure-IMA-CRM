@@ -4,7 +4,7 @@ import * as React from "react";
 import { LayoutDashboard, Users, Command } from "lucide-react";
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
-import { CollegeSwitcher } from "@/components/college-switcher";
+import { StudentSwitcher } from "@/components/student-switcher";
 import {
   Sidebar,
   SidebarContent,
@@ -51,13 +51,13 @@ const defaultNavItems = [
 ];
 
 const defaultUser = {
-  name: "EdTracts",
+  name: "Allure IMA",
   email: "m@example.com",
   avatar: "/avatars/shadcn.jpg",
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { userRole, colleges, userData, getUser } = useUserStore();
+  const { userRole, students, userData, getUser } = useUserStore();
   const [data, setData] = useState<SidebarData>({
     user: defaultUser,
     navMain: salesPersonNavItems || adminNavItems,
@@ -86,10 +86,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         if (userRole === "salesperson") {
           setData({
             user: updatedUser,
-            colleges: colleges.map((college: any) => ({
-              id: college.id,
-              name: college.name,
-              email: college.email || "",
+            students: students.map((student: any) => ({
+              id: student.id,
+              name: student.fullName,
+              email: student.email || "",
               logo: Command as React.ElementType,
             })),
             navMain: salesPersonNavItems,
@@ -117,7 +117,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     };
 
     updateSidebarData();
-  }, [userRole, colleges, userData]);
+  }, [userRole, students, userData]);
 
   if (loading) {
     return <SidebarSkeleton />;
@@ -126,7 +126,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar variant="inset" collapsible="icon" {...props}>
       <SidebarHeader>
-        <CollegeSwitcher colleges={data.colleges ?? []} />
+        <StudentSwitcher students={data.students ?? []} />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />

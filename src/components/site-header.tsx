@@ -12,7 +12,9 @@ export function SiteHeader() {
             orientation="vertical"
             className="mx-2 data-[orientation=vertical]:h-4"
           />
-          <span className="text-xl font-semibold tracking-tight">EdTracts</span>
+          <span className="text-xl font-semibold tracking-tight">
+            Allure IMA
+          </span>
         </div>
         <ThemeToggle />
       </div>

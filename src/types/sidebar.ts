@@ -6,7 +6,7 @@ export interface User {
   avatar: string;
 }
 
-export interface College {
+export interface Student {
   id: string;
   name: string;
   email: string;
@@ -21,6 +21,6 @@ export interface NavItem {
 
 export interface SidebarData {
   user: User;
-  colleges?: College[];
+  students?: Student[];
   navMain: NavItem[];
 }

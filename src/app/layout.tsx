@@ -12,8 +12,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "EdTracts CRM",
-  description: "Education CRM System",
+  title: "Allure IMA CRM",
+  description: "Allure IMA CRM",
 };
 
 export default function RootLayout({
