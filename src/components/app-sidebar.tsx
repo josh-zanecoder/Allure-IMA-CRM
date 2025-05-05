@@ -16,16 +16,20 @@ import { useUserStore } from "@/store/useUserStore";
 import { useEffect, useState } from "react";
 import { SidebarData } from "@/types/sidebar";
 import { SidebarSkeleton } from "@/components/ui/sidebar-skeleton";
+
 const salesPersonNavItems = [
   {
     title: "Dashboard",
     url: "/salesperson/dashboard",
     icon: LayoutDashboard,
+    isActive: (pathname: string) => pathname === "/salesperson/dashboard",
   },
   {
     title: "Prospects",
     url: "/salesperson/prospects",
     icon: Users,
+    isActive: (pathname: string) =>
+      pathname.startsWith("/salesperson/prospects"),
   },
 ];
 
@@ -34,11 +38,13 @@ const adminNavItems = [
     title: "Dashboard",
     url: "/admin/dashboard",
     icon: LayoutDashboard,
+    isActive: (pathname: string) => pathname === "/admin/dashboard",
   },
   {
     title: "Sales Team",
     url: "/admin/salespersons",
     icon: Users,
+    isActive: (pathname: string) => pathname.startsWith("/admin/salespersons"),
   },
 ];
 
@@ -47,6 +53,7 @@ const defaultNavItems = [
     title: "",
     url: "#",
     icon: LayoutDashboard,
+    isActive: () => false,
   },
 ];
 

@@ -20,6 +20,7 @@ export function NavMain({
     title: string;
     url: string;
     icon?: LucideIcon;
+    isActive?: (pathname: string) => boolean;
   }[];
 }) {
   const pathname = usePathname();
@@ -42,18 +43,23 @@ export function NavMain({
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => {
-            const isActive = pathname === item.url;
+            const isActive = item.isActive
+              ? item.isActive(pathname)
+              : pathname === item.url;
             return (
               <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton
                   asChild
                   tooltip={item.title}
                   isActive={isActive}
+                  disabled={isActive}
                 >
                   <Link
                     href={item.url}
-                    className="flex items-center gap-3"
-                    onClick={(e) => handleClick(e, item.url)}
+                    className={`flex items-center gap-3 ${
+                      isActive ? "pointer-events-none opacity-70" : ""
+                    }`}
+                    onClick={(e) => !isActive && handleClick(e, item.url)}
                   >
                     {item.icon && <item.icon className="h-4 w-4 shrink-0" />}
                     <span>{item.title}</span>
