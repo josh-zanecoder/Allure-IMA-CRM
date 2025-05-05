@@ -1,13 +1,54 @@
 "use client";
 
+import { useEffect } from "react";
+import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, CheckCircle2, Clock } from "lucide-react";
+import { Mail, Phone, Plus, CheckCircle2, Clock, FileText } from "lucide-react";
+import { useUserStore } from "@/store/useUserStore";
+
+const getActivityIcon = (type: string) => {
+  switch (type) {
+    case "Email":
+      return (
+        <Mail className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-foreground" />
+      );
+    case "Meeting":
+      return (
+        <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-foreground" />
+      );
+    case "Task":
+      return (
+        <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-foreground" />
+      );
+    default:
+      return (
+        <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-foreground" />
+      );
+  }
+};
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case "Completed":
+      return "bg-emerald-500 text-white dark:text-black";
+    case "In Progress":
+      return "bg-amber-500 text-white dark:text-black";
+    case "Cancelled":
+      return "bg-destructive text-white dark:text-black";
+    default:
+      return "bg-primary text-white dark:text-black";
+  }
+};
 
 export default function AdminDashboard() {
   const { user, isLoading } = useAuth();
+  const { activities, fetchAllActivities } = useUserStore();
+
+  useEffect(() => {
+    fetchAllActivities();
+  }, [fetchAllActivities]);
 
   if (isLoading) {
     return (
@@ -72,74 +113,57 @@ export default function AdminDashboard() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg sm:text-xl">
-            Recent Sales Team Activity
+            Recent Activities
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-6 sm:space-y-8">
-            {/* Activity Item 1 */}
-            <div className="relative flex items-start gap-3 sm:gap-4">
-              <div className="relative">
-                <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-primary flex items-center justify-center">
-                  <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-foreground" />
+            {activities.map((activity, index) => (
+              <div
+                key={activity._id}
+                className="relative flex items-start gap-3 sm:gap-4"
+              >
+                <div className="relative">
+                  <div
+                    className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full ${getStatusColor(
+                      activity.status
+                    )} flex items-center justify-center`}
+                  >
+                    {getActivityIcon(activity.type)}
+                  </div>
+                  {index !== activities.length - 1 && (
+                    <div className="absolute left-[13px] sm:left-[15px] top-7 sm:top-8 h-[calc(100%+32px)] w-[2px] bg-border" />
+                  )}
                 </div>
-                <div className="absolute left-[13px] sm:left-[15px] top-7 sm:top-8 h-[calc(100%+32px)] w-[2px] bg-border" />
-              </div>
-              <div className="flex-1 min-w-0 space-y-1">
-                <p className="text-sm text-muted-foreground break-words">
-                  New salesperson{" "}
-                  <span className="font-medium text-foreground">John Doe</span>{" "}
-                  was added to the team
-                </p>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Clock className="h-3 w-3" />
-                  <time dateTime="2024-04-27">1h ago</time>
-                </div>
-              </div>
-            </div>
-
-            {/* Activity Item 2 */}
-            <div className="relative flex items-start gap-3 sm:gap-4">
-              <div className="relative">
-                <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-emerald-500 flex items-center justify-center">
-                  <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-50" />
-                </div>
-                <div className="absolute left-[13px] sm:left-[15px] top-7 sm:top-8 h-[calc(100%+32px)] w-[2px] bg-border" />
-              </div>
-              <div className="flex-1 min-w-0 space-y-1">
-                <p className="text-sm text-muted-foreground break-words">
-                  Sales target achieved by{" "}
-                  <span className="font-medium text-foreground">
-                    Jane Smith
-                  </span>
-                </p>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Clock className="h-3 w-3" />
-                  <time dateTime="2024-04-26">2h ago</time>
-                </div>
-              </div>
-            </div>
-
-            {/* Activity Item 3 */}
-            <div className="relative flex items-start gap-3 sm:gap-4">
-              <div className="relative">
-                <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-amber-500 flex items-center justify-center">
-                  <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-50" />
+                <div className="flex-1 min-w-0 space-y-1">
+                  <p className="text-sm text-muted-foreground break-words">
+                    {activity.title}{" "}
+                    <span className="font-medium text-foreground">
+                      -{" "}
+                      {typeof activity.prospectId === "object"
+                        ? activity.prospectId.fullName
+                        : "Unknown Prospect"}
+                    </span>
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {activity.description}
+                  </p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Clock className="h-3 w-3" />
+                    <time dateTime={activity.dueDate}>
+                      {format(new Date(activity.dueDate), "MMM d, yyyy")}
+                    </time>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-xs ${getStatusColor(
+                        activity.status
+                      )} bg-opacity-10 text-foreground`}
+                    >
+                      {activity.status}
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div className="flex-1 min-w-0 space-y-1">
-                <p className="text-sm text-muted-foreground break-words">
-                  Monthly review completed for{" "}
-                  <span className="font-medium text-foreground">
-                    Mike Johnson
-                  </span>
-                </p>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Clock className="h-3 w-3" />
-                  <time dateTime="2024-04-25">1d ago</time>
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
         </CardContent>
       </Card>

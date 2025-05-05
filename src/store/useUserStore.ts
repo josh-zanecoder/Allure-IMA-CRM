@@ -6,6 +6,7 @@ export const useUserStore = create<UserStore>((set) => ({
   userRole: null,
   students: [],
   userData: null,
+  activities: [],
   getUser: async () => {
     try {
       const [userDataResponse, studentsResponse] = await Promise.all([
@@ -35,5 +36,19 @@ export const useUserStore = create<UserStore>((set) => ({
   fetchStudents: async () => {
     const res = await axios.get("/api/students");
     set({ students: res.data.students });
+  },
+  fetchAllActivities: async () => {
+    try {
+      const res = await axios.get("/api/admin/dashboard");
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        set({ activities: res.data.data });
+        return res.data.data;
+      }
+      console.error("Invalid activities data format:", res.data);
+      return [];
+    } catch (error) {
+      console.error("Error fetching activities:", error);
+      return [];
+    }
   },
 }));

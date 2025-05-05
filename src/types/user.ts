@@ -52,10 +52,35 @@ export type Student = {
   // Add other properties as needed
 };
 
+export type Activity = {
+  _id: string;
+  title: string;
+  description: string;
+  type: string;
+  status: string;
+  dueDate: string;
+  completedDate: string;
+  prospectId: string | Prospect;
+  addedBy: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export interface Prospect {
+  _id: string;
+  fullName: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
 export type UserStore = {
   userRole: string | null;
   students: Student[];
   userData: UserData | null;
+  activities: Activity[];
   getUser: () => Promise<void>;
   fetchStudents: () => Promise<void>;
+  fetchAllActivities: () => Promise<void>;
 };
