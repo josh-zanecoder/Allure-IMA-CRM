@@ -4,6 +4,8 @@ import * as React from "react";
 import { ChevronsUpDown, Plus, Command } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { useTheme } from "next-themes";
+import Image from "next/image";
 
 import {
   DropdownMenu,
@@ -40,6 +42,7 @@ export function StudentSwitcher({
 }) {
   const { isMobile, setOpenMobile } = useSidebar();
   const pathname = usePathname();
+  const { theme } = useTheme();
 
   // Find active college and tab based on URL
   const { activeStudent, activeTab } = React.useMemo(() => {
@@ -75,8 +78,18 @@ export function StudentSwitcher({
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                <currentStudent.logo className="size-4" />
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg p-1 bg-black dark:bg-white">
+                <Image
+                  src={
+                    theme === "dark"
+                      ? "/allure-logo-dark-sm.png"
+                      : "/allure-logo-light-sm.png"
+                  }
+                  alt="Allure IMA Logo"
+                  width={24}
+                  height={24}
+                  className="size-6 object-contain [filter:contrast(1.2)_brightness(1.1)] dark:[filter:contrast(1.3)_brightness(1.2)]"
+                />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">
