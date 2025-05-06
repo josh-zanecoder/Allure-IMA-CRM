@@ -279,9 +279,10 @@ export default function RemindersPage({ params }: PageProps) {
         {reminders.map((reminder) => (
           <Card
             key={reminder._id}
-            className="overflow-hidden border-border/5 bg-card shadow-none"
+            className="w-full rounded-xl shadow-md hover:shadow-lg transition-shadow border-l-4 border-primary bg-white dark:bg-zinc-900 p-2 sm:p-4 relative group"
           >
-            <CardHeader className="border-b border-border/5 bg-card p-3">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none rounded-xl" />
+            <CardHeader className="border-b border-border/5 bg-transparent p-3 relative">
               <div className="relative flex flex-col w-full">
                 <div className="flex items-start justify-between w-full">
                   <h3 className="text-sm font-medium text-card-foreground break-all pr-16">
@@ -291,7 +292,7 @@ export default function RemindersPage({ params }: PageProps) {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 w-7 p-0 hover:bg-destructive/10 hover:text-destructive"
+                      className="h-7 w-7 p-0 hover:bg-destructive/10 hover:text-destructive transition-colors duration-200"
                       onClick={() => handleDeleteClick(reminder._id)}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -299,7 +300,7 @@ export default function RemindersPage({ params }: PageProps) {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 w-7 p-0 hover:bg-primary/10 hover:text-primary"
+                      className="h-7 w-7 p-0 hover:bg-primary/10 hover:text-primary transition-colors duration-200"
                       onClick={() => handleEditClick(reminder)}
                     >
                       <Pencil className="h-3.5 w-3.5" />
@@ -314,7 +315,7 @@ export default function RemindersPage({ params }: PageProps) {
                 </Badge>
               </div>
             </CardHeader>
-            <CardContent className="space-y-2 bg-card p-3">
+            <CardContent className="space-y-2 bg-transparent p-3 relative">
               <div className="flex items-center gap-2">
                 <Clock className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground truncate">
@@ -337,8 +338,9 @@ export default function RemindersPage({ params }: PageProps) {
         ))}
 
         {reminders.length === 0 && (
-          <Card className="col-span-full border-border/5 bg-card">
-            <CardContent className="flex flex-col items-center justify-center py-8 sm:py-12">
+          <Card className="col-span-full border-border/5 bg-white dark:bg-zinc-900 rounded-xl shadow-md p-4 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none rounded-xl" />
+            <CardContent className="flex flex-col items-center justify-center py-8 sm:py-12 relative bg-transparent">
               <Bell className="h-10 w-10 sm:h-12 sm:w-12 text-primary/20" />
               <h3 className="mt-3 sm:mt-4 text-sm sm:text-base font-medium text-card-foreground">
                 No reminders yet
