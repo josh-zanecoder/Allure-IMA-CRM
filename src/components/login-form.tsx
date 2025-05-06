@@ -64,9 +64,9 @@ export function LoginForm({
               <div className="flex size-8 items-center justify-center rounded-md">
                 <BookOpen className="size-6" />
               </div>
-              <span className="sr-only">Edtracts CRM</span>
+              <span className="sr-only">Allure IMA CRM</span>
             </a>
-            <h1 className="text-xl font-bold">Welcome to Edtracts CRM</h1>
+            <h1 className="text-xl font-bold">Welcome to Allure IMA CRM</h1>
           </div>
           <div className="flex flex-col gap-4">
             <div

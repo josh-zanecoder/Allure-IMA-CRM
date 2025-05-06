@@ -1,7 +1,7 @@
-// components/ui/loader.tsx
-import { Loader2 } from "lucide-react";
+import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 
 interface LoaderProps {
   size?: "sm" | "md" | "lg";
@@ -14,28 +14,52 @@ export default function Loader({
   fullPage = true,
   message,
 }: LoaderProps) {
+  const { theme } = useTheme();
   const [isVisible, setIsVisible] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     setIsVisible(true);
+    let currentProgress = 0;
+
+    const incrementProgress = () => {
+      if (currentProgress < 100) {
+        currentProgress += 1.5; // Increased increment step
+        setProgress(currentProgress);
+        setTimeout(incrementProgress, 10); // Reduced delay
+      }
+    };
+
+    incrementProgress();
     return () => setIsVisible(false);
   }, []);
 
-  const sizeClasses = {
-    sm: "h-5 w-5",
-    md: "h-8 w-8 sm:h-10 sm:w-10",
-    lg: "h-10 w-10 sm:h-12 sm:w-12",
-  };
-
   const LoaderContent = () => (
-    <>
-      <Loader2 className={cn("animate-spin text-primary", sizeClasses[size])} />
+    <div className="flex flex-col items-center gap-8">
+      <Image
+        src={
+          theme === "dark"
+            ? "/allure-logo-light-sm.png"
+            : "/allure-logo-dark-sm.png"
+        }
+        alt="Allure IMA Logo"
+        width={500}
+        height={150}
+        className="h-32 w-auto [filter:contrast(1.5)_brightness(1.4)] dark:[filter:contrast(1.6)_brightness(1.5)]"
+        priority
+      />
+      <div className="w-96 h-2.5 bg-muted rounded-full overflow-hidden">
+        <div
+          className="h-full bg-primary transition-all duration-50 ease-linear" // Faster transition
+          style={{ width: `${progress}%` }}
+        />
+      </div>
       {message && (
-        <p className="mt-3 text-sm sm:text-base text-muted-foreground animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <p className="text-sm text-muted-foreground animate-in fade-in slide-in-from-bottom-2 duration-300">
           {message}
         </p>
       )}
-    </>
+    </div>
   );
 
   if (fullPage) {
@@ -49,16 +73,7 @@ export default function Loader({
         )}
         data-state={isVisible ? "open" : "closed"}
       >
-        <img
-          src="/images/loader-logo.gif"
-          alt="logo"
-          className={cn(
-            "w-[80%] sm:w-[25%] md:w-[20%] lg:w-[15%] max-w-[300px]",
-            "animate-in fade-in zoom-in-95 duration-500",
-            "data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95"
-          )}
-          data-state={isVisible ? "open" : "closed"}
-        />
+        <LoaderContent />
       </div>
     );
   }
@@ -73,16 +88,7 @@ export default function Loader({
       )}
       data-state={isVisible ? "open" : "closed"}
     >
-      <img
-        src="/images/loader-logo.gif"
-        alt="logo"
-        className={cn(
-          "w-[80%] sm:w-[25%] md:w-[20%] lg:w-[15%] max-w-[300px]",
-          "animate-in fade-in zoom-in-95 duration-500",
-          "data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95"
-        )}
-        data-state={isVisible ? "open" : "closed"}
-      />
+      <LoaderContent />
     </div>
   );
 }

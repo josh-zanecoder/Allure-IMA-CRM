@@ -66,10 +66,14 @@ export default function LoginPage() {
 
     try {
       if (!email || !password) {
-        toast.error("Please enter both email and password");
+        toast.error("Please enter both email and password", {
+          id: loadingToast,
+        });
         return;
       } else if (!emailRegex.test(email)) {
-        toast.error("Please enter a valid email address");
+        toast.error("Please enter a valid email address", {
+          id: loadingToast,
+        });
         return;
       }
       await login({ email, password });
