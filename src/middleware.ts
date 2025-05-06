@@ -11,6 +11,7 @@ export function middleware(request: NextRequest) {
     "/login",
     "/api/auth/login",
     "/api/auth/verify",
+    "/api/auth/google/check",
     "/api/twilio/voice",
     "/api/twilio/incoming",
     "/api/twilio/dial-status",
