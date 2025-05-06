@@ -105,11 +105,21 @@ export default function LoginPage() {
         id: loadingToast,
       });
     } catch (error: any) {
+      // Immediately handle popup closure
+      if (error?.code === "auth/popup-closed-by-user") {
+        toast.dismiss(loadingToast);
+        toast.error("Sign-in with Google cancelled", {
+          duration: 2000,
+        });
+        return;
+      }
+
+      // Handle other errors
       console.log(error);
       const message = error.message || getFirebaseAuthErrorMessage(error);
       toast.error(message, {
         id: loadingToast,
-        duration: 5000, // Show for 5 seconds
+        duration: 5000,
       });
       console.log("Login error:", message);
     } finally {

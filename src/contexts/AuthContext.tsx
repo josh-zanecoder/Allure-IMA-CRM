@@ -91,7 +91,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const provider = new GoogleAuthProvider();
       console.log("Google provider initialized");
-      const result = await signInWithPopup(auth, provider);
+
+      let result;
+      try {
+        result = await signInWithPopup(auth, provider);
+      } catch (error: any) {
+        if (error?.code === "auth/popup-closed-by-user") {
+          setAuthState({
+            user: null,
+            isLoading: false,
+            error: null,
+          });
+          return Promise.reject({ code: "auth/popup-closed-by-user" });
+        }
+        throw error;
+      }
+
       console.log("Google popup result:", {
         email: result.user.email,
         uid: result.user.uid,
