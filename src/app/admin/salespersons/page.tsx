@@ -37,23 +37,24 @@ export default function SalespersonsPage() {
   const [isLoadingSalespersons, setIsLoadingSalespersons] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchSalespersons = async () => {
-      try {
-        const response = await fetch("/api/admin-salespersons");
-        if (!response.ok) {
-          throw new Error("Failed to fetch salespersons");
-        }
-        const data = await response.json();
-        setSalespersons(data);
-      } catch (error) {
-        console.error("Error fetching salespersons:", error);
-        setError("Failed to load salespersons");
-      } finally {
-        setIsLoadingSalespersons(false);
+  const fetchSalespersons = async () => {
+    try {
+      setIsLoadingSalespersons(true);
+      const response = await fetch("/api/admin-salespersons");
+      if (!response.ok) {
+        throw new Error("Failed to fetch salespersons");
       }
-    };
+      const data = await response.json();
+      setSalespersons(data);
+    } catch (error) {
+      console.error("Error fetching salespersons:", error);
+      setError("Failed to load salespersons");
+    } finally {
+      setIsLoadingSalespersons(false);
+    }
+  };
 
+  useEffect(() => {
     fetchSalespersons();
   }, []);
 
@@ -350,6 +351,7 @@ export default function SalespersonsPage() {
       <AddSalespersonModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        onSalespersonAdded={fetchSalespersons}
       />
     </div>
   );

@@ -6,16 +6,20 @@ export interface User {
   displayName: string | null;
   token: string;
   twilioNumber: string | null;
-  role: "admin" | "salesperson";
-  id: ObjectId | null;
-  redirectTo: string;
-  twilio_number?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  status?: string;
+  lastLogin?: Date;
+  createdAt?: Date;
+  redirectTo?: string;
+  googleLinked?: boolean;
 }
 
 export interface AuthState {
   user: User | null;
   isLoading: boolean;
   error: string | null;
+  isRedirecting: boolean;
 }
 
 export interface LoginCredentials {

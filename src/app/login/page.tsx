@@ -8,19 +8,17 @@ import { toast } from "sonner";
 import { getFirebaseAuthErrorMessage } from "@/lib/firebaseErrors";
 import { ThemeToggle } from "@/components/theme-toggle";
 import Loader from "@/components/ui/loader";
-// import toast from "react-hot-toast";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [isRedirecting, setIsRedirecting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const router = useRouter();
-  const { login, resetPassword, google } = useAuth();
+  const { login, resetPassword, google, isRedirecting } = useAuth();
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   // Add password reset handler
@@ -78,7 +76,6 @@ export default function LoginPage() {
         return;
       }
       await login({ email, password });
-      setIsRedirecting(true);
       toast.success("Successfully signed in!", {
         id: loadingToast,
       });
@@ -100,8 +97,7 @@ export default function LoginPage() {
 
     try {
       await google();
-      setIsRedirecting(true);
-      toast.success("Successfully signed in!", {
+      toast.success("Successfully signed in with Google!", {
         id: loadingToast,
       });
     } catch (error: any) {
@@ -111,6 +107,7 @@ export default function LoginPage() {
         toast.error("Sign-in with Google cancelled", {
           duration: 2000,
         });
+        setIsGoogleLoading(false);
         return;
       }
 
@@ -122,7 +119,6 @@ export default function LoginPage() {
         duration: 5000,
       });
       console.log("Login error:", message);
-    } finally {
       setIsGoogleLoading(false);
     }
   };

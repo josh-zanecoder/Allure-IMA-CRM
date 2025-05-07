@@ -4,17 +4,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import { Prospect } from "@/types/prospect";
-import AddStudentModal, {
-  Student,
-} from "@/components/salesperson/AddProspectModal";
 import { formatAddress, formatPhoneNumber } from "@/utils/formatters";
 import { useCallStore } from "@/store/useCallStore";
 import { useDebouncedCallback } from "use-debounce";
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { Plus, Phone, Mail, MapPin, Globe, User, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import { useUserStore } from "@/store/useUserStore";
+import axios from "axios";
+import { InteractionType, InteractionStatus } from "@/models/InteractionRecord";
 
 import {
   Table,
@@ -46,6 +44,16 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Utility function to remove special characters from phone number
 const unformatPhoneNumber = (phone: string) => {
@@ -65,6 +73,10 @@ export default function ProspectsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [progress, setProgress] = useState(0);
   const fetchStudents = useUserStore((state) => state.fetchStudents);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [prospectToDelete, setProspectToDelete] = useState<Prospect | null>(
+    null
+  );
 
   // Define callbacks using useCallback
   const handleRowClick = useCallback(
@@ -136,65 +148,131 @@ export default function ProspectsPage() {
     }
   }, [isLoading]);
 
-  const handleAddProspect = async (
-    newStudent: Omit<Student, "id" | "createdAt" | "updatedAt">
-  ) => {
-    const loadingToast = toast.loading("Saving student...");
-    try {
-      const response = await fetch("/api/prospects/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...newStudent,
-          fullName: `${newStudent.firstName} ${newStudent.lastName}`,
-          firstName: newStudent.firstName,
-          lastName: newStudent.lastName,
-          phone: newStudent.phone,
-          email: newStudent.email,
-          address: newStudent.address,
-          educationLevel: newStudent.educationLevel,
-          dateOfBirth: new Date(newStudent.dateOfBirth),
-          preferredContactMethod: newStudent.preferredContactMethod,
-          interests: newStudent.interests,
-          status: "New",
-          notes: newStudent.notes || "",
-          lastContact: new Date().toISOString().split("T")[0],
-        }),
-      });
+  // const handleAddProspect = async (
+  //   newStudent: Omit<Student, "id" | "createdAt" | "updatedAt">
+  // ) => {
+  //   const loadingToast = toast.loading("Saving student...");
+  //   try {
+  //     const response = await axios.post("/api/prospects/create", {
+  //       ...newStudent,
+  //       fullName: `${newStudent.firstName} ${newStudent.lastName}`,
+  //       firstName: newStudent.firstName,
+  //       lastName: newStudent.lastName,
+  //       phone: newStudent.phone,
+  //       email: newStudent.email,
+  //       address: newStudent.address,
+  //       educationLevel: newStudent.educationLevel,
+  //       dateOfBirth: new Date(newStudent.dateOfBirth),
+  //       preferredContactMethod: newStudent.preferredContactMethod,
+  //       interests: newStudent.interests,
+  //       status: "New",
+  //       notes: newStudent.notes || "",
+  //       lastContact: new Date().toISOString().split("T")[0],
+  //     });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        toast.error(errorData.error || "Failed to create student", {
-          id: loadingToast,
-        });
-        return;
+  //     if (response.status !== 200) {
+  //       const errorData = response.data;
+  //       toast.error(errorData.error || "Failed to create student", {
+  //         id: loadingToast,
+  //       });
+  //       return;
+  //     }
+
+  //     const createdStudent = response.data;
+  //     setProspects((prev) => [...prev, createdStudent]);
+  //     setIsModalOpen(false);
+  //     toast.success("Student added successfully", {
+  //       id: loadingToast,
+  //     });
+  //     await fetchStudents();
+  //   } catch (error) {
+  //     console.error("Error creating student:", error);
+  //     toast.error(
+  //       error instanceof Error ? error.message : "Failed to create student",
+  //       { id: loadingToast }
+  //     );
+  //   }
+  // };
+
+  const handleMakeCall = async (prospect: Prospect) => {
+    try {
+      const callId = `call_${Date.now()}`;
+      const tempCallSid = `temp_${Date.now()}`;
+
+      // Create call log entry
+      const callLogData = {
+        to: `+1${unformatPhoneNumber(prospect.phone)}`,
+        from: `+1${unformatPhoneNumber(user?.twilioNumber || "")}`,
+        userId: user?.uid ?? "",
+        prospectId: prospect.id,
+        callSid: tempCallSid,
+        activityId: callId,
+        transcription: "Pending transcription", // Non-empty default value
+      };
+
+      // Log the call
+      const logResponse = await axios.post(
+        "/api/salesperson/call-logs",
+        callLogData
+      );
+
+      if (logResponse.status !== 200 && logResponse.status !== 201) {
+        throw new Error("Failed to log call");
       }
 
-      const createdStudent = await response.json();
-      setProspects((prev) => [...prev, createdStudent]);
-      setIsModalOpen(false);
-      toast.success("Student added successfully", {
-        id: loadingToast,
-      });
-      await fetchStudents();
-    } catch (error) {
-      console.error("Error creating student:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to create student",
-        { id: loadingToast }
-      );
-    }
-  };
+      // Create interaction record
+      const interactionData = {
+        userId: callLogData.userId,
+        prospectId: callLogData.prospectId,
+        interactionId: `interaction_${Date.now()}`,
+        interactionType: InteractionType.CALL,
+        subject: `Call to ${prospect.fullName}`,
+        details: `Outbound phone call to ${
+          prospect.fullName
+        } at ${formatPhoneNumber(prospect.phone)}`,
+        status: InteractionStatus.INITIATED,
+        startTime: new Date(),
+        extraData: {
+          callSid: callLogData.callSid,
+          to: callLogData.to,
+          from: callLogData.from,
+          direction: "outbound",
+        },
+      };
 
-  const handleMakeCall = (prospect: Prospect) => {
-    makeCall({
-      To: `+1${unformatPhoneNumber(prospect.phone)}`,
-      CallerId: `+1${unformatPhoneNumber(user?.twilioNumber || "")}`,
-      UserId: user?.uid ?? "",
-      ProspectId: prospect.id,
-    });
+      // Save the interaction record
+      try {
+        const interactionResponse = await axios.post(
+          "/api/interactions",
+          interactionData
+        );
+        console.log("Interaction record created", interactionResponse.data);
+      } catch (interactionError) {
+        console.warn(
+          "Failed to create interaction record, but continuing with call",
+          interactionError
+        );
+      }
+
+      // Make the call
+      makeCall({
+        To: callLogData.to,
+        CallerId: callLogData.from,
+        UserId: callLogData.userId,
+        ProspectId: callLogData.prospectId,
+      });
+    } catch (error) {
+      console.error("Error preparing call:", error);
+      toast.error("Failed to prepare call, but proceeding with call");
+
+      // Still make the call even if logging fails
+      makeCall({
+        To: `+1${unformatPhoneNumber(prospect.phone)}`,
+        CallerId: `+1${unformatPhoneNumber(user?.twilioNumber || "")}`,
+        UserId: user?.uid ?? "",
+        ProspectId: prospect.id,
+      });
+    }
   };
 
   const handleSendEmail = (prospect: Prospect) => {
@@ -207,6 +285,41 @@ export default function ProspectsPage() {
 
     // Open in a new tab to avoid navigation issues
     window.open(mailtoLink, "_blank");
+  };
+
+  const handleDeleteProspect = async (prospect: Prospect) => {
+    setProspectToDelete(prospect);
+  };
+
+  const confirmDelete = async () => {
+    if (!prospectToDelete) return;
+
+    setIsDeleting(true);
+    const loadingToast = toast.loading("Deleting prospect...");
+
+    try {
+      const response = await axios.delete(
+        `/api/prospects/${prospectToDelete.id}`
+      );
+
+      if (response.status === 200) {
+        setProspects((prev) =>
+          prev.filter((p) => p.id !== prospectToDelete.id)
+        );
+        toast.success("Prospect deleted successfully", { id: loadingToast });
+      } else {
+        throw new Error(response.data.error || "Failed to delete prospect");
+      }
+    } catch (error) {
+      console.error("Error deleting prospect:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete prospect",
+        { id: loadingToast }
+      );
+    } finally {
+      setIsDeleting(false);
+      setProspectToDelete(null);
+    }
   };
 
   // Render loading state
@@ -257,7 +370,7 @@ export default function ProspectsPage() {
           </p>
         </div>
         <Button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => router.push("/salesperson/add-student")}
           size="sm"
           className="w-full sm:w-auto"
         >
@@ -388,13 +501,14 @@ export default function ProspectsPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="hover:text-primary"
+                              className="flex items-center gap-2 hover:text-primary"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleMakeCall(prospect);
                               }}
                               disabled={isCalling}
                             >
+                              <Phone className="h-4 w-4 text-primary" />
                               {formatPhoneNumber(prospect.phone)}
                             </Button>
                           </TableCell>
@@ -468,7 +582,13 @@ export default function ProspectsPage() {
                                   Send Email
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-destructive">
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteProspect(prospect);
+                                  }}
+                                  className="text-destructive"
+                                >
                                   <Trash2 className="mr-2 h-4 w-4" />
                                   Delete
                                 </DropdownMenuItem>
@@ -527,14 +647,14 @@ export default function ProspectsPage() {
                 <CardContent className="space-y-2 px-2 pb-2">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 text-xs">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-auto p-0 hover:text-primary text-xs"
+                        className="flex items-center gap-2 h-auto p-0 hover:text-primary text-xs"
                         onClick={() => handleMakeCall(prospect)}
                         disabled={isCalling}
                       >
+                        <Phone className="h-4 w-4 text-primary" />
                         {formatPhoneNumber(prospect.phone)}
                       </Button>
                     </div>
@@ -594,11 +714,11 @@ export default function ProspectsPage() {
         </>
       )}
 
-      <AddStudentModal
+      {/* <AddStudentModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleAddProspect}
-      />
+      /> */}
 
       {/* Pagination */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -648,6 +768,34 @@ export default function ProspectsPage() {
           </Button>
         </div>
       </div>
+
+      {/* Add Alert Dialog */}
+      <AlertDialog
+        open={!!prospectToDelete}
+        onOpenChange={() => setProspectToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              prospect
+              {prospectToDelete && ` "${prospectToDelete.fullName}"`} and all
+              associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

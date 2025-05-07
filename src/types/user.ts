@@ -10,6 +10,7 @@ export type UserData = {
   firstName: string;
   lastName: string;
   displayName: string;
+  googleLinked: boolean;
   // Add other properties as needed
 };
 

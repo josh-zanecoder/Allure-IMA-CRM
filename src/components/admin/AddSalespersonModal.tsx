@@ -42,6 +42,20 @@ export default function AddSalespersonModal({
   const [errors, setErrors] = useState<Partial<CreateSalespersonInput>>({});
   const [apiError, setApiError] = useState<string | null>(null);
 
+  const resetForm = () => {
+    setFormData({
+      first_name: "",
+      last_name: "",
+      email: "",
+      phone: "",
+      password: "Default@123",
+      role: "salesperson",
+      twilio_number: "",
+    });
+    setErrors({});
+    setApiError(null);
+  };
+
   const handlePhoneChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     field: "phone" | "twilio_number"
@@ -160,6 +174,12 @@ export default function AddSalespersonModal({
         id: loadingToast,
       });
 
+      // Send password setup email
+      await sendSetPassword(formData.email);
+
+      // Reset the form
+      resetForm();
+
       if (onSalespersonAdded) {
         onSalespersonAdded();
       }
@@ -178,6 +198,39 @@ export default function AddSalespersonModal({
       );
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Function to send password setup email to newly created salesperson
+  const sendSetPassword = async (email: string) => {
+    try {
+      const setupToast = toast.loading("Sending password setup email...");
+
+      const response = await fetch("/api/auth/send-password-setup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to send password setup email");
+      }
+
+      toast.success("Password setup email sent successfully!", {
+        id: setupToast,
+      });
+    } catch (error) {
+      console.error("Error sending password setup email:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to send password setup email. The salesperson was created but will need to be sent a setup link manually.",
+        { duration: 5000 }
+      );
     }
   };
 
