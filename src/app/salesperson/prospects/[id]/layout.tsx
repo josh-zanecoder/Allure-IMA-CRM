@@ -7,29 +7,11 @@ import { ArrowLeft } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
 
 interface LayoutProps {
   children: React.ReactElement;
   params: Promise<{ id: string }>;
-}
-
-function LoadingState() {
-  return (
-    <div className="space-y-4 sm:space-y-6">
-      <div className="flex items-center space-x-3 sm:space-x-4">
-        <Skeleton className="h-10 w-10 sm:h-12 sm:w-12" />
-        <div className="space-y-1.5 sm:space-y-2">
-          <Skeleton className="h-3.5 sm:h-4 w-[200px] sm:w-[250px]" />
-          <Skeleton className="h-3.5 sm:h-4 w-[150px] sm:w-[200px]" />
-        </div>
-      </div>
-      <div className="space-y-2 sm:space-y-3">
-        <Skeleton className="h-[150px] sm:h-[200px] w-full" />
-        <Skeleton className="h-[150px] sm:h-[200px] w-full" />
-      </div>
-    </div>
-  );
 }
 
 export default function ProspectLayout({ children, params }: LayoutProps) {
@@ -37,17 +19,47 @@ export default function ProspectLayout({ children, params }: LayoutProps) {
   const router = useRouter();
   const resolvedParams = React.use(params);
   const id = resolvedParams.id;
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [progress, setProgress] = React.useState(0);
 
   const tabs = [
     { name: "Details", href: `/salesperson/prospects/${id}/details` },
-    // { name: "Members", href: `/salesperson/prospects/${id}/members` },
     { name: "Reminders", href: `/salesperson/prospects/${id}/reminders` },
     { name: "Activities", href: `/salesperson/prospects/${id}/activities` },
   ];
 
   const handleTabChange = (value: string) => {
+    setIsLoading(true);
+    setProgress(0);
     router.push(value);
   };
+
+  // Reset loading state when pathname changes
+  React.useEffect(() => {
+    if (isLoading) {
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+        setProgress(0);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [pathname, isLoading]);
+
+  // Progress animation
+  React.useEffect(() => {
+    if (isLoading) {
+      const timer = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 100) {
+            clearInterval(timer);
+            return 100;
+          }
+          return prev + 10;
+        });
+      }, 100);
+      return () => clearInterval(timer);
+    }
+  }, [isLoading]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -76,14 +88,23 @@ export default function ProspectLayout({ children, params }: LayoutProps) {
                   key={tab.name}
                   value={tab.href}
                   className="relative h-[38px] sm:h-[42px] rounded-md sm:rounded-none border sm:border-0 border-border sm:border-b-2 border-transparent data-[state=active]:border-primary bg-transparent px-2 sm:px-4 text-sm sm:text-base font-medium data-[state=active]:bg-primary/5 sm:data-[state=active]:bg-transparent data-[state=active]:border-primary sm:data-[state=active]:border-primary data-[state=active]:shadow-none sm:flex-1 text-center"
+                  disabled={isLoading}
                 >
                   {tab.name}
                 </TabsTrigger>
               ))}
             </TabsList>
           </div>
-          <div className="rounded-lg">
-            <Suspense fallback={<LoadingState />}>{children}</Suspense>
+          <div className="rounded-lg relative min-h-[200px]">
+            {isLoading && (
+              <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-10 flex flex-col items-center justify-center gap-4">
+                <Progress value={progress} className="w-[60%] max-w-[300px]" />
+                <span className="text-sm text-muted-foreground">
+                  Loading...
+                </span>
+              </div>
+            )}
+            <div className="relative">{children}</div>
           </div>
         </Tabs>
       </div>

@@ -13,6 +13,12 @@ export enum EducationLevel {
   PHD = "Doctorate",
 }
 
+export enum Gender {
+  MALE = "Male",
+  FEMALE = "Female",
+  OTHER = "Other",
+}
+
 export enum Interest {
   BUSINESS = "Business",
   COMPUTER_SCIENCE = "Computer Science",
@@ -34,7 +40,13 @@ export enum Status {
   InProgress = "In Progress",
   Graduated = "Graduated",
   Withdrawn = "Withdrawn",
-  OnHold = "On Hold"
+  OnHold = "On Hold",
+}
+
+export enum PreferredContactMethod {
+  EMAIL = "Email",
+  CALL = "Call",
+  TEXT = "Text",
 }
 
 export interface User {
@@ -50,12 +62,37 @@ export interface Prospect {
   fullName: string;
   firstName: string;
   lastName: string;
+  gender: Gender;
+  genderOther: string;
   phone: string;
   email: string;
   address: Address;
   educationLevel: EducationLevel;
   dateOfBirth: string;
-  preferredContactMethod: string;
+  preferredContactMethod: PreferredContactMethod;
+  interests: string[];
+  notes: string;
+  status: Status;
+  lastContact: string;
+  createdAt: string;
+  updatedAt: string;
+  addedBy: User;
+  assignedTo: User;
+}
+
+export interface Student {
+  id: string;
+  fullName: string;
+  firstName: string;
+  lastName: string;
+  gender: Gender;
+  genderOther: string;
+  phone: string;
+  email: string;
+  address: Address;
+  educationLevel: EducationLevel;
+  dateOfBirth: string;
+  preferredContactMethod: PreferredContactMethod;
   interests: string[];
   notes: string;
   status: Status;

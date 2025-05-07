@@ -1,10 +1,9 @@
 "use client";
 
-import { Fragment } from "react";
-import { Dialog, Transition } from "@headlessui/react";
 import { useState, useEffect } from "react";
-import { X, Check, Loader2 } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { z } from "zod";
 
 import {
   Dialog as ShadDialog,
@@ -32,26 +31,14 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { Interest, EducationLevel, Status } from "@/types/prospect";
-
-export interface Student {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  address: {
-    street: string;
-    city: string;
-    state: string;
-    zip: string;
-  };
-  dateOfBirth: string;
-  educationLevel: string;
-  interests: string[];
-  preferredContactMethod: "email" | "phone" | "text";
-  notes: string;
-  status: Status;
-}
+import {
+  Interest,
+  EducationLevel,
+  Status,
+  PreferredContactMethod,
+  Student,
+} from "@/types/prospect";
+import { ProspectSchema } from "@/lib/validation/student-schema";
 
 interface AddStudentModalProps {
   isOpen: boolean;
@@ -59,7 +46,7 @@ interface AddStudentModalProps {
   onSave: (student: Omit<Student, "id" | "createdAt" | "updatedAt">) => void;
 }
 
-const initialFormState: Student = {
+const initialFormState: Omit<Student, "id"> = {
   firstName: "",
   lastName: "",
   email: "",
@@ -71,11 +58,29 @@ const initialFormState: Student = {
     zip: "",
   },
   dateOfBirth: "",
-  educationLevel: "",
+  educationLevel: EducationLevel.HIGH_SCHOOL,
   interests: [],
-  preferredContactMethod: "email",
+  preferredContactMethod: PreferredContactMethod.EMAIL,
   notes: "",
   status: Status.New,
+  fullName: "",
+  lastContact: new Date().toISOString().split("T")[0],
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  addedBy: {
+    id: "",
+    firstName: "",
+    lastName: "",
+    email: "",
+    role: "",
+  },
+  assignedTo: {
+    id: "",
+    firstName: "",
+    lastName: "",
+    email: "",
+    role: "",
+  },
 };
 
 export default function AddStudentModal({
@@ -86,6 +91,7 @@ export default function AddStudentModal({
   const [formData, setFormData] = useState(initialFormState);
   const [isInterestsDropdownOpen, setIsInterestsDropdownOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isValidPhoneNumber = (phone: string): boolean => {
     const phoneRegex = /^\(\d{3}\) \d{3}-\d{4}$/;
@@ -94,32 +100,55 @@ export default function AddStudentModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     setIsSubmitting(true);
     const loadingToast = toast.loading("Saving student...");
 
-    // Validate phone number before submitting
-    if (formData.phone && !isValidPhoneNumber(formData.phone)) {
-      toast.error(
-        "Please enter a valid phone number in format (XXX) XXX-XXXX",
-        {
-          id: loadingToast,
-        }
-      );
-      return;
-    }
-
     try {
+      // Validate the form data using Zod
+      const validatedData = ProspectSchema.parse({
+        ...formData,
+        id: "temp-id", // Required by schema but not used in form
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        addedBy: {
+          id: "temp-id",
+          firstName: "System",
+          lastName: "User",
+          email: "system@example.com",
+          role: "admin",
+        },
+        assignedTo: {
+          id: "temp-id",
+          firstName: "System",
+          lastName: "User",
+          email: "system@example.com",
+          role: "admin",
+        },
+      });
+
       await onSave(formData);
       setFormData(initialFormState);
+      setErrors({});
       onClose();
       toast.success("Student added successfully", {
         id: loadingToast,
       });
     } catch (error) {
-      toast.error("Failed to add student. Please try again.", {
-        id: loadingToast,
-      });
+      if (error instanceof z.ZodError) {
+        const newErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          const path = err.path.join(".");
+          newErrors[path] = err.message;
+        });
+        setErrors(newErrors);
+        toast.error("Please fix the validation errors", {
+          id: loadingToast,
+        });
+      } else {
+        toast.error("Failed to add student. Please try again.", {
+          id: loadingToast,
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -136,6 +165,8 @@ export default function AddStudentModal({
         ...prev,
         [name]: formattedPhone,
       }));
+      // Clear error when user types
+      setErrors((prev) => ({ ...prev, phone: "" }));
       return;
     }
 
@@ -148,11 +179,15 @@ export default function AddStudentModal({
           [field]: value,
         },
       }));
+      // Clear error when user types
+      setErrors((prev) => ({ ...prev, [`address.${field}`]: "" }));
     } else {
       setFormData((prev) => ({
         ...prev,
         [name]: value,
       }));
+      // Clear error when user types
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
@@ -192,8 +227,11 @@ export default function AddStudentModal({
                 value={formData.firstName}
                 onChange={handleChange}
                 placeholder="Enter first name"
-                required
+                className={errors.firstName ? "border-destructive" : ""}
               />
+              {errors.firstName && (
+                <p className="text-xs text-destructive">{errors.firstName}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -204,8 +242,11 @@ export default function AddStudentModal({
                 value={formData.lastName}
                 onChange={handleChange}
                 placeholder="Enter last name"
-                required
+                className={errors.lastName ? "border-destructive" : ""}
               />
+              {errors.lastName && (
+                <p className="text-xs text-destructive">{errors.lastName}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -217,8 +258,11 @@ export default function AddStudentModal({
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="student@example.com"
-                required
+                className={errors.email ? "border-destructive" : ""}
               />
+              {errors.email && (
+                <p className="text-xs text-destructive">{errors.email}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -232,14 +276,17 @@ export default function AddStudentModal({
                 placeholder="(555) 123-4567"
                 maxLength={14}
                 className={cn(
-                  formData.phone &&
-                    !isValidPhoneNumber(formData.phone) &&
+                  "border-input",
+                  (errors.phone ||
+                    (formData.phone && !isValidPhoneNumber(formData.phone))) &&
                     "border-destructive"
                 )}
               />
-              {formData.phone && !isValidPhoneNumber(formData.phone) && (
+              {(errors.phone ||
+                (formData.phone && !isValidPhoneNumber(formData.phone))) && (
                 <p className="text-xs text-destructive">
-                  Please enter a valid phone number in format (XXX) XXX-XXXX
+                  {errors.phone ||
+                    "Please enter a valid phone number in format (XXX) XXX-XXXX"}
                 </p>
               )}
             </div>
@@ -252,8 +299,13 @@ export default function AddStudentModal({
                 value={formData.address.street}
                 onChange={handleChange}
                 placeholder="Enter street address"
-                required
+                className={errors["address.street"] ? "border-destructive" : ""}
               />
+              {errors["address.street"] && (
+                <p className="text-xs text-destructive">
+                  {errors["address.street"]}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -264,8 +316,13 @@ export default function AddStudentModal({
                 value={formData.address.city}
                 onChange={handleChange}
                 placeholder="Enter city"
-                required
+                className={errors["address.city"] ? "border-destructive" : ""}
               />
+              {errors["address.city"] && (
+                <p className="text-xs text-destructive">
+                  {errors["address.city"]}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -276,8 +333,13 @@ export default function AddStudentModal({
                 value={formData.address.state}
                 onChange={handleChange}
                 placeholder="Enter state"
-                required
+                className={errors["address.state"] ? "border-destructive" : ""}
               />
+              {errors["address.state"] && (
+                <p className="text-xs text-destructive">
+                  {errors["address.state"]}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -288,8 +350,13 @@ export default function AddStudentModal({
                 value={formData.address.zip}
                 onChange={handleChange}
                 placeholder="Enter ZIP code"
-                required
+                className={errors["address.zip"] ? "border-destructive" : ""}
               />
+              {errors["address.zip"] && (
+                <p className="text-xs text-destructive">
+                  {errors["address.zip"]}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -300,8 +367,11 @@ export default function AddStudentModal({
                 type="date"
                 value={formData.dateOfBirth}
                 onChange={handleChange}
-                required
+                className={errors.dateOfBirth ? "border-destructive" : ""}
               />
+              {errors.dateOfBirth && (
+                <p className="text-xs text-destructive">{errors.dateOfBirth}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -311,8 +381,10 @@ export default function AddStudentModal({
                 name="educationLevel"
                 value={formData.educationLevel}
                 onChange={handleChange}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                required
+                className={cn(
+                  "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+                  errors.educationLevel && "border-destructive"
+                )}
               >
                 <option value="">Select education level</option>
                 {Object.values(EducationLevel).map((level) => (
@@ -321,6 +393,11 @@ export default function AddStudentModal({
                   </option>
                 ))}
               </select>
+              {errors.educationLevel && (
+                <p className="text-xs text-destructive">
+                  {errors.educationLevel}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -391,13 +468,20 @@ export default function AddStudentModal({
                 name="preferredContactMethod"
                 value={formData.preferredContactMethod}
                 onChange={handleChange}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                required
+                className={cn(
+                  "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+                  errors.preferredContactMethod && "border-destructive"
+                )}
               >
                 <option value="email">Email</option>
                 <option value="phone">Phone</option>
                 <option value="text">Text Message</option>
               </select>
+              {errors.preferredContactMethod && (
+                <p className="text-xs text-destructive">
+                  {errors.preferredContactMethod}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -409,7 +493,11 @@ export default function AddStudentModal({
                   value={formData.notes}
                   onChange={handleChange}
                   placeholder="Additional notes about the student"
+                  className={errors.notes ? "border-destructive" : ""}
                 />
+                {errors.notes && (
+                  <p className="text-xs text-destructive">{errors.notes}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -419,8 +507,10 @@ export default function AddStudentModal({
                   name="status"
                   value={formData.status}
                   onChange={handleChange}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  required
+                  className={cn(
+                    "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+                    errors.status && "border-destructive"
+                  )}
                 >
                   {Object.values(Status).map((status) => (
                     <option key={status} value={status}>
@@ -428,6 +518,9 @@ export default function AddStudentModal({
                     </option>
                   ))}
                 </select>
+                {errors.status && (
+                  <p className="text-xs text-destructive">{errors.status}</p>
+                )}
               </div>
             </div>
           </div>
