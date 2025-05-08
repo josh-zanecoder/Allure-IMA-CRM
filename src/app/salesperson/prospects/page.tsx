@@ -370,7 +370,7 @@ export default function ProspectsPage() {
           </p>
         </div>
         <Button
-          onClick={() => router.push("/salesperson/add-student")}
+          onClick={() => router.push("/salesperson/prospects/new")}
           size="sm"
           className="w-full sm:w-auto"
         >

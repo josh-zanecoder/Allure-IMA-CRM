@@ -449,7 +449,7 @@ export default function DashboardPage() {
                             isExpiredReminder
                               ? "border-2 border-red-500 bg-red-50/10"
                               : isDueSoonReminder
-                              ? "border-red-400"
+                              ? "border-yellow-400"
                               : isAlmostDue
                               ? "border-yellow-400"
                               : ""
@@ -487,8 +487,8 @@ export default function DashboardPage() {
                             )}
                             {isDueSoonReminder && !isExpiredReminder && (
                               <Badge
-                                variant="destructive"
-                                className="flex items-center gap-1 whitespace-nowrap text-[10px] sm:text-xs"
+                                variant="outline"
+                                className="flex items-center gap-1 whitespace-nowrap text-[10px] sm:text-xs border-yellow-400 text-yellow-600"
                               >
                                 <ExclamationTriangleIcon className="h-3 w-3" />
                                 Due Soon
@@ -579,9 +579,9 @@ export default function DashboardPage() {
                           key={activity._id}
                           className={`flex items-start justify-between p-3 sm:p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors ${
                             isExpiredActivity
-                              ? "border-2 border-red-500 bg-red-50/10"
+                              ? "border-2 border-red-500"
                               : isDueSoonActivity
-                              ? "border-red-400"
+                              ? "border-yellow-400"
                               : isAlmostDue
                               ? "border-yellow-400"
                               : ""
@@ -631,8 +631,8 @@ export default function DashboardPage() {
                             )}
                             {isDueSoonActivity && !isExpiredActivity && (
                               <Badge
-                                variant="destructive"
-                                className="flex items-center gap-1 whitespace-nowrap text-[10px] sm:text-xs"
+                                variant="outline"
+                                className="flex items-center gap-1 whitespace-nowrap text-[10px] sm:text-xs border-yellow-400 text-yellow-600"
                               >
                                 <ExclamationTriangleIcon className="h-3 w-3" />
                                 Due Soon

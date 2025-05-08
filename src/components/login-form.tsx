@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import React, { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
+import { TermsPrivacyModal } from "@/components/terms-privacy-modal";
 
 interface LoginFormProps extends React.ComponentProps<"div"> {
   email: string;
@@ -42,6 +43,8 @@ export function LoginForm({
   ...props
 }: LoginFormProps) {
   const [show, setShow] = useState(false);
+  const [termsModalOpen, setTermsModalOpen] = useState(false);
+  const [privacyModalOpen, setPrivacyModalOpen] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setShow(true), 100);
@@ -50,6 +53,20 @@ export function LoginForm({
 
   return (
     <div className={cn("flex flex-col gap-4", className)} {...props}>
+      {/* Terms of Service Modal */}
+      <TermsPrivacyModal
+        isOpen={termsModalOpen}
+        onClose={() => setTermsModalOpen(false)}
+        type="terms"
+      />
+
+      {/* Privacy Policy Modal */}
+      <TermsPrivacyModal
+        isOpen={privacyModalOpen}
+        onClose={() => setPrivacyModalOpen(false)}
+        type="privacy"
+      />
+
       <form onSubmit={onSubmit} className="overflow-hidden">
         <div className="flex flex-col gap-4">
           <div
@@ -272,15 +289,34 @@ export function LoginForm({
       </div>
       <div
         className={cn(
-          "text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4",
+          "text-muted-foreground text-center text-xs text-balance",
           "[transform:translateY(20px)] opacity-0",
           "transition-[transform,opacity] duration-700 ease-out",
           show && "!transform-none !opacity-100"
         )}
         style={{ transitionDelay: "900ms" }}
       >
-        By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-        and <a href="#">Privacy Policy</a>.
+        By clicking continue, you agree to our{" "}
+        <button
+          className="underline underline-offset-4 hover:text-primary transition-colors"
+          onClick={(e) => {
+            e.preventDefault();
+            setTermsModalOpen(true);
+          }}
+        >
+          Terms of Service
+        </button>{" "}
+        and{" "}
+        <button
+          className="underline underline-offset-4 hover:text-primary transition-colors"
+          onClick={(e) => {
+            e.preventDefault();
+            setPrivacyModalOpen(true);
+          }}
+        >
+          Privacy Policy
+        </button>
+        .
       </div>
     </div>
   );

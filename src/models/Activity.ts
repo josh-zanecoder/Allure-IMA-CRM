@@ -42,7 +42,7 @@ const activitySchema = new mongoose.Schema(
     },
     addedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "User", // This should match the model name in UserModel
       required: true,
     },
   },
@@ -55,5 +55,8 @@ activitySchema.pre("save", function (next) {
   next();
 });
 
-export default mongoose.models.Activity ||
-  mongoose.model("Activity", activitySchema);
+// Use a consistent approach to model creation/retrieval
+const ActivityModel =
+  mongoose.models.Activity || mongoose.model("Activity", activitySchema);
+
+export default ActivityModel;

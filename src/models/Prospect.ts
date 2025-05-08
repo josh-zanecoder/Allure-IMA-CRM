@@ -38,9 +38,15 @@ const prospectSchema = new mongoose.Schema(
       required: true,
       enum: Object.values(EducationLevel),
     },
+    gender: { type: String, required: true },
+    genderOther: { type: String },
     dateOfBirth: { type: Date, required: true },
     preferredContactMethod: { type: String, required: true },
-    interests: { type: [String], required: true, enum: Object.values(Interest) },
+    interests: {
+      type: [String],
+      required: true,
+      enum: Object.values(Interest),
+    },
     notes: { type: String },
     status: {
       type: [String],

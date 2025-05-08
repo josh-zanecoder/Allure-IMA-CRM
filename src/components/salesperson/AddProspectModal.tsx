@@ -37,6 +37,7 @@ import {
   Status,
   PreferredContactMethod,
   Student,
+  Gender,
 } from "@/types/prospect";
 import { ProspectSchema } from "@/lib/validation/student-schema";
 
@@ -67,6 +68,8 @@ const initialFormState: Omit<Student, "id"> = {
   lastContact: new Date().toISOString().split("T")[0],
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
+  gender: Gender.MALE,
+  genderOther: "",
   addedBy: {
     id: "",
     firstName: "",

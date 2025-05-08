@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 if (!process.env.MONGODB_URI) {
   throw new Error('Invalid/Missing environment variable: "MONGODB_URI"');
@@ -9,7 +9,7 @@ const options = {
   maxPoolSize: 10,
   minPoolSize: 5,
   connectTimeoutMS: 30000, // Increased from 10 to 30 seconds
-  socketTimeoutMS: 45000,  // 45 seconds
+  socketTimeoutMS: 45000, // 45 seconds
   serverSelectionTimeoutMS: 30000, // Increased from 10 to 30 seconds
   heartbeatFrequencyMS: 10000, // 10 seconds
   maxIdleTimeMS: 60000, // 1 minute
@@ -38,31 +38,34 @@ if (!global.mongoose) {
 
 async function connectToMongoDB() {
   if (cached.conn) {
-    console.log('Using existing MongoDB connection');
+    console.log("Using existing MongoDB connection");
     return cached.conn;
   }
 
   if (!cached.promise) {
-    console.log('Creating new MongoDB connection...');
+    console.log("Creating new MongoDB connection...");
     const opts = {
       bufferCommands: false,
       ...options,
     };
 
-    cached.promise = mongoose.connect(uri, opts).then((mongoose) => {
-      console.log('✅ Mongoose connected successfully');
-      return mongoose;
-    }).catch((error) => {
-      console.error('❌ MongoDB connection error:', error);
-      throw error;
-    });
+    cached.promise = mongoose
+      .connect(uri, opts)
+      .then((mongoose) => {
+        console.log("✅ Mongoose connected successfully");
+        return mongoose;
+      })
+      .catch((error) => {
+        console.error("❌ MongoDB connection error:", error);
+        throw error;
+      });
   }
 
   try {
-    console.log('Waiting for MongoDB connection...');
+    console.log("Waiting for MongoDB connection...");
     cached.conn = await cached.promise;
   } catch (e) {
-    console.error('Failed to establish MongoDB connection:', e);
+    console.error("Failed to establish MongoDB connection:", e);
     cached.promise = null;
     throw e;
   }
@@ -70,4 +73,4 @@ async function connectToMongoDB() {
   return cached.conn;
 }
 
-export default connectToMongoDB; 
+export default connectToMongoDB;

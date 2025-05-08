@@ -8,10 +8,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Reminder } from "@/lib/validation/reminder-schema";
-import { Loader2 } from "lucide-react";
-import { useReminderStore } from "@/store/reminderStore";
+import { Loader2, AlertCircle } from "lucide-react";
+import { useReminderStore } from "@/store/useReminderStore";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface RemindersModalProps {
@@ -23,30 +22,23 @@ export default function Reminders({
   isOpenModal,
   onOpenChangeModal,
 }: RemindersModalProps) {
-  const { reminders, isLoading, error, fetchReminders, resetError } =
-    useReminderStore();
+  const { reminders, isLoading, error, fetchReminders } = useReminderStore();
 
   useEffect(() => {
     if (isOpenModal) {
-      fetchReminders();
+      fetchReminders("all");
     }
   }, [isOpenModal, fetchReminders]);
 
-  // Reset error when dialog closes
-  useEffect(() => {
-    if (!isOpenModal && error) {
-      resetError();
-    }
-  }, [isOpenModal, error, resetError]);
-
   // Format the reminder date in a readable format
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "";
+  const formatDate = (dateInput: Date | string) => {
+    if (!dateInput) return "";
     try {
-      const date = new Date(dateString);
+      const date =
+        typeof dateInput === "string" ? new Date(dateInput) : dateInput;
       return date.toLocaleString();
     } catch (e) {
-      return dateString || "";
+      return typeof dateInput === "string" ? dateInput : dateInput.toString();
     }
   };
 
@@ -61,51 +53,8 @@ export default function Reminders({
     );
   };
 
-  // Check if a reminder is due soon (within 24 hours)
-  const isDueSoon = (dueDate: string) => {
-    if (!dueDate) return false;
-    try {
-      const due = new Date(dueDate);
-      const now = new Date();
-      const diff = due.getTime() - now.getTime();
-      return diff > 0 && diff < 24 * 60 * 60 * 1000; // less than 24 hours from now
-    } catch (e) {
-      return false;
-    }
-  };
-
-  // Check if a reminder is almost due (within 3 days but not due soon)
-  const isAlmostDue = (dueDate: string) => {
-    if (!dueDate) return false;
-    try {
-      const due = new Date(dueDate);
-      const now = new Date();
-      const diff = due.getTime() - now.getTime();
-      return diff > 0 && diff < 3 * 24 * 60 * 60 * 1000 && !isDueSoon(dueDate); // within 3 days but not due soon
-    } catch (e) {
-      return false;
-    }
-  };
-
-  // Check if a reminder is expired (past due date but still pending)
-  const isExpired = (dueDate: string, status: string) => {
-    if (!dueDate || status !== "PENDING") return false;
-    try {
-      const due = new Date(dueDate);
-      const now = new Date();
-      return due < now; // Due date is in the past
-    } catch (e) {
-      return false;
-    }
-  };
-
-  // Sort reminders by due date and status
+  // Sort reminders by date
   const sortedReminders = [...reminders].sort((a, b) => {
-    // First sort by status - pending first
-    if (a.status === "PENDING" && b.status !== "PENDING") return -1;
-    if (a.status !== "PENDING" && b.status === "PENDING") return 1;
-
-    // Then sort by due date (ascending)
     const dateA = a.dueDate ? new Date(a.dueDate).getTime() : 0;
     const dateB = b.dueDate ? new Date(b.dueDate).getTime() : 0;
     return dateA - dateB;
@@ -135,78 +84,41 @@ export default function Reminders({
           </div>
         ) : (
           <div className="space-y-4">
-            {sortedReminders.map((reminder: Reminder) => (
+            {sortedReminders.map((reminder) => (
               <div
                 key={reminder._id}
-                className={`border rounded-lg p-4 hover:bg-accent/50 transition-colors ${
-                  isExpired(reminder.dueDate, reminder.status)
-                    ? "border-2 border-red-500 bg-red-50/10"
-                    : isDueSoon(reminder.dueDate) &&
-                      reminder.status === "PENDING"
-                    ? "border-red-400"
-                    : isAlmostDue(reminder.dueDate) &&
-                      reminder.status === "PENDING"
-                    ? "border-yellow-400"
-                    : ""
-                }`}
+                className="border rounded-lg shadow-sm hover:shadow-md transition-all"
               >
-                <div className="flex justify-between items-start gap-2">
-                  <h3 className="font-medium text-lg break-words line-clamp-2 flex-1">
-                    {reminder.title}
-                  </h3>
-                  <div className="flex gap-2 shrink-0">
-                    {isExpired(reminder.dueDate, reminder.status) && (
-                      <Badge
-                        variant="destructive"
-                        className="whitespace-nowrap bg-red-500"
-                      >
-                        Expired
-                      </Badge>
-                    )}
-                    {isDueSoon(reminder.dueDate) &&
-                      reminder.status === "PENDING" &&
-                      !isExpired(reminder.dueDate, reminder.status) && (
-                        <Badge
-                          variant="destructive"
-                          className="whitespace-nowrap"
-                        >
-                          Due Soon
-                        </Badge>
-                      )}
-                    {isAlmostDue(reminder.dueDate) &&
-                      reminder.status === "PENDING" && (
-                        <Badge
-                          variant="outline"
-                          className="whitespace-nowrap border-yellow-400 text-yellow-600"
-                        >
-                          Almost Due
-                        </Badge>
-                      )}
-                    <Badge
-                      variant={
-                        reminder.status === "COMPLETED" ? "default" : "outline"
-                      }
-                    >
-                      {reminder.status}
+                <div className="p-4">
+                  <div className="flex justify-between items-start gap-2 mb-3">
+                    <h3 className="font-semibold text-base break-words">
+                      {reminder.title}
+                    </h3>
+                    <Badge className="shrink-0 capitalize">
+                      {reminder.status.toLowerCase()}
                     </Badge>
                   </div>
-                </div>
 
-                <p className="text-sm text-muted-foreground mb-2 break-words whitespace-normal">
-                  {reminder.description}
-                </p>
+                  <div className="bg-secondary/20 rounded-md p-3 mb-3">
+                    <p className="text-sm text-muted-foreground break-words whitespace-pre-wrap">
+                      {reminder.description}
+                    </p>
+                  </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-muted-foreground">
-                  <div className="break-words">
-                    <span className="font-medium">Prospect:</span>{" "}
-                    {getProspectName(reminder.prospectId)}
-                  </div>
-                  <div className="break-words">
-                    <span className="font-medium">Type:</span> {reminder.type}
-                  </div>
-                  <div className="whitespace-normal">
-                    <span className="font-medium">Due Date:</span>{" "}
-                    {formatDate(reminder.dueDate)}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-muted-foreground">
+                    <div>
+                      <span className="font-medium">Type:</span> {reminder.type}
+                    </div>
+                    <div>
+                      <span className="font-medium">Due Date:</span>{" "}
+                      {formatDate(reminder.dueDate)}
+                    </div>
+                    <div className="sm:col-span-2">
+                      <span className="font-medium">Prospect:</span>{" "}
+                      {reminder.addedBy
+                        ? `${reminder.addedBy.firstName} ${reminder.addedBy.lastName}`
+                        : "Unknown"}
+                    </div>
                   </div>
                 </div>
               </div>

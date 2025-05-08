@@ -26,7 +26,7 @@ import {
   Gender,
 } from "@/types/prospect";
 import { ProspectSchema } from "@/lib/validation/student-schema";
-import axios from "axios";
+import { useProspectStore } from "@/store/useProspectStore";
 
 const initialFormState: Omit<Student, "id" | "createdAt" | "updatedAt"> = {
   firstName: "",
@@ -67,8 +67,8 @@ const initialFormState: Omit<Student, "id" | "createdAt" | "updatedAt"> = {
 
 export default function AddStudentPage() {
   const [formData, setFormData] = useState(initialFormState);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const { createProspect, isLoading, error } = useProspectStore();
   const router = useRouter();
 
   const isValidPhoneNumber = (phone: string): boolean => {
@@ -78,7 +78,6 @@ export default function AddStudentPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     const loadingToast = toast.loading("Saving student...");
 
     // Validate the form data first
@@ -114,61 +113,27 @@ export default function AddStudentPage() {
         toast.error("Please fill all the required fields", {
           id: loadingToast,
         });
-        setIsSubmitting(false);
         return;
       }
     }
 
     try {
-      // Check if email already exists
-      const emailCheckResponse = await axios.get(
-        `/api/prospects/check-email?email=${encodeURIComponent(formData.email)}`
-      );
-      if (emailCheckResponse.data.exists) {
-        toast.error("A student with this email already exists", {
-          id: loadingToast,
-        });
-        setIsSubmitting(false);
-        return;
+      const result = await createProspect(formData);
+
+      if (result) {
+        setFormData(initialFormState);
+        setErrors({});
+        toast.success("Student added successfully", { id: loadingToast });
+        router.push("/salesperson/prospects");
+      } else {
+        throw new Error(error || "Failed to create student");
       }
-
-      // Prepare the data for API submission
-      const studentData = {
-        ...formData,
-        fullName: `${formData.firstName} ${formData.lastName}`,
-        dateOfBirth: new Date(formData.dateOfBirth).toISOString(),
-        lastContact: new Date().toISOString().split("T")[0],
-        addedBy: {
-          id: "temp-id",
-          firstName: "System",
-          lastName: "User",
-          email: "system@example.com",
-          role: "admin",
-        },
-        assignedTo: {
-          id: "temp-id",
-          firstName: "System",
-          lastName: "User",
-          email: "system@example.com",
-          role: "admin",
-        },
-      };
-
-      // Make API call to save the student
-      const response = await axios.post("/api/prospects/create", studentData);
-
-      setFormData(initialFormState);
-      setErrors({});
-      toast.success("Student added successfully", { id: loadingToast });
-      router.push("/salesperson/prospects");
     } catch (error) {
       console.error("Error creating student:", error);
       toast.error(
         error instanceof Error ? error.message : "Failed to create student",
         { id: loadingToast }
       );
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -184,6 +149,24 @@ export default function AddStudentPage() {
         [name]: formattedPhone,
       }));
       setErrors((prev) => ({ ...prev, phone: "" }));
+      return;
+    }
+
+    if (name === "gender") {
+      // Clear genderOther if gender is not "Other"
+      if (value !== Gender.OTHER) {
+        setFormData((prev) => ({
+          ...prev,
+          gender: value as Gender,
+          genderOther: "",
+        }));
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          gender: value as Gender,
+        }));
+      }
+      setErrors((prev) => ({ ...prev, gender: "", genderOther: "" }));
       return;
     }
 
@@ -275,11 +258,13 @@ export default function AddStudentPage() {
                 }`}
               >
                 <option value="">Select gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
+                {Object.values(Gender).map((gender) => (
+                  <option key={gender} value={gender}>
+                    {gender}
+                  </option>
+                ))}
               </select>
-              {formData.gender === "Other" && (
+              {formData.gender === Gender.OTHER && (
                 <div className="mt-2">
                   <Label htmlFor="genderOther" className="m-2">
                     Please specify
@@ -382,9 +367,11 @@ export default function AddStudentPage() {
                     : "border-input"
                 }`}
               >
-                <option value="email">Email</option>
-                <option value="phone">Phone</option>
-                <option value="text">Text Message</option>
+                {Object.values(PreferredContactMethod).map((method) => (
+                  <option key={method} value={method}>
+                    {method}
+                  </option>
+                ))}
               </select>
               {errors.preferredContactMethod && (
                 <p className="text-xs text-destructive">
@@ -578,8 +565,8 @@ export default function AddStudentPage() {
             </div>
           </CardContent>
           <CardFooter className="flex justify-end space-x-2">
-            <Button type="submit" disabled={isSubmitting} variant="default">
-              {isSubmitting ? "Saving..." : "Save Student"}
+            <Button type="submit" disabled={isLoading} variant="default">
+              {isLoading ? "Saving..." : "Save Student"}
             </Button>
           </CardFooter>
         </Card>

@@ -60,7 +60,7 @@ const defaultNavItems = [
 const defaultUser = {
   name: "Allure IMA",
   email: "m@example.com",
-  avatar: "/avatars/shadcn.jpg",
+  avatar: "/allurelogo.png",
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {

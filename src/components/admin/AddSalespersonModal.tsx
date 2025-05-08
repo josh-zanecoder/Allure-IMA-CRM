@@ -21,6 +21,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
+import axios from "axios";
 
 interface AddSalespersonModalProps {
   isOpen: boolean;
@@ -46,6 +47,12 @@ export default function AddSalespersonModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
+
+  // Function to check if phone number is valid
+  const isValidPhoneNumber = (phone: string): boolean => {
+    const phoneRegex = /^\(\d{3}\) \d{3}-\d{4}$/;
+    return phoneRegex.test(phone);
+  };
 
   const resetForm = () => {
     setFormData({
@@ -123,9 +130,23 @@ export default function AddSalespersonModal({
         return false;
       }
 
-      if (formData.phone.length < 10) {
-        setErrors({ phone: "Phone number is required" });
+      // Check if phone has the complete and correct format
+      if (!isValidPhoneNumber(formData.phone)) {
+        setErrors({
+          phone: "Please enter a valid phone number in format (XXX) XXX-XXXX",
+        });
         return false;
+      }
+
+      // Check twilio number if it's not empty
+      if (formData.twilio_number && formData.twilio_number.length > 0) {
+        if (!isValidPhoneNumber(formData.twilio_number)) {
+          setErrors({
+            twilio_number:
+              "Please enter a valid phone number in format (XXX) XXX-XXXX",
+          });
+          return false;
+        }
       }
 
       // Validate the data with the schema
@@ -157,25 +178,15 @@ export default function AddSalespersonModal({
     const loadingToast = toast.loading("Creating new salesperson...");
 
     try {
-      const response = await fetch("/api/admin-salespersons/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...formData,
-          phone: unformatPhoneNumber(formData.phone),
-          twilio_number: formData.twilio_number
-            ? unformatPhoneNumber(formData.twilio_number)
-            : null,
-        }),
+      const response = await axios.post("/api/admin-salespersons/create", {
+        ...formData,
+        phone: unformatPhoneNumber(formData.phone),
+        twilio_number: formData.twilio_number
+          ? unformatPhoneNumber(formData.twilio_number)
+          : null,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to create salesperson");
-      }
+      console.log("response", response);
 
       toast.success("Salesperson created successfully!", {
         id: loadingToast,
@@ -194,15 +205,18 @@ export default function AddSalespersonModal({
       onClose();
     } catch (error) {
       console.error("Error creating salesperson:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to create salesperson",
-        {
-          id: loadingToast,
-        }
-      );
-      setApiError(
-        error instanceof Error ? error.message : "Failed to create salesperson"
-      );
+
+      let errorMessage = "Failed to create salesperson";
+      if (axios.isAxiosError(error) && error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      toast.error(errorMessage, {
+        id: loadingToast,
+      });
+      setApiError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -213,31 +227,23 @@ export default function AddSalespersonModal({
     try {
       const setupToast = toast.loading("Sending password setup email...");
 
-      const response = await fetch("/api/auth/send-password-setup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to send password setup email");
-      }
+      await axios.post("/api/auth/send-password-setup", { email });
 
       toast.success("Password setup email sent successfully!", {
         id: setupToast,
       });
     } catch (error) {
       console.error("Error sending password setup email:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to send password setup email. The salesperson was created but will need to be sent a setup link manually.",
-        { duration: 5000 }
-      );
+
+      let errorMessage =
+        "Failed to send password setup email. The salesperson was created but will need to be sent a setup link manually.";
+      if (axios.isAxiosError(error) && error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      toast.error(errorMessage, { duration: 5000 });
     }
   };
 
@@ -317,10 +323,20 @@ export default function AddSalespersonModal({
               value={formData.phone}
               onChange={handleChange}
               placeholder="(555) 123-4567"
-              className={cn(errors.phone && "border-destructive")}
+              maxLength={14}
+              className={cn(
+                "border-input",
+                (errors.phone ||
+                  (formData.phone && !isValidPhoneNumber(formData.phone))) &&
+                  "border-destructive"
+              )}
             />
-            {errors.phone && (
-              <p className="text-xs text-destructive">{errors.phone}</p>
+            {(errors.phone ||
+              (formData.phone && !isValidPhoneNumber(formData.phone))) && (
+              <p className="text-xs text-destructive">
+                {errors.phone ||
+                  "Please enter a valid phone number in format (XXX) XXX-XXXX"}
+              </p>
             )}
           </div>
 
@@ -337,14 +353,28 @@ export default function AddSalespersonModal({
               type="tel"
               value={formData.twilio_number}
               onChange={handleChange}
-              placeholder="+1 (555) 123-4567"
-              className={cn(errors.twilio_number && "border-destructive")}
+              placeholder="(555) 123-4567"
+              maxLength={14}
+              className={cn(
+                "border-input",
+                (errors.twilio_number ||
+                  (formData.twilio_number &&
+                    formData.twilio_number.length > 0 &&
+                    !isValidPhoneNumber(formData.twilio_number))) &&
+                  "border-destructive"
+              )}
             />
             {errors.twilio_number ? (
               <p className="text-xs text-destructive">{errors.twilio_number}</p>
+            ) : formData.twilio_number &&
+              formData.twilio_number.length > 0 &&
+              !isValidPhoneNumber(formData.twilio_number) ? (
+              <p className="text-xs text-destructive">
+                Please enter a valid phone number in format (XXX) XXX-XXXX
+              </p>
             ) : (
               <p className="text-xs text-muted-foreground">
-                Format: +1XXXXXXXXXX (include country code)
+                Enter in format (XXX) XXX-XXXX
               </p>
             )}
           </div>

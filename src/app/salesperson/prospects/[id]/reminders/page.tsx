@@ -1,31 +1,29 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Reminder, ReminderStatus } from "@/types/reminder";
-import AddEditReminderModal from "@/components/salesperson/AddEditReminderModal";
-import {
-  Bell,
-  Clock,
-  CheckCircle2,
-  Trash2,
-  Pencil,
-  AlertCircle,
-  Loader2,
-  Plus,
-  Eye,
-} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
-
+import { useReminderStore, Reminder } from "@/store/useReminderStore";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardFooter,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Calendar,
+  Clock,
+  Plus,
+  Loader2,
+  Calendar as CalendarIcon,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  Trash,
+  Pencil,
+  Eye,
+  X,
+} from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,42 +34,36 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import AddEditReminderModal from "@/components/salesperson/AddEditReminderModal";
+import type { Reminder as ModalReminder } from "@/types/reminder";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose,
 } from "@/components/ui/dialog";
 
 function formatDate(date: Date | string) {
-  const dateObj = typeof date === "string" ? new Date(date) : date;
-  return dateObj.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
-
-function getStatusVariant(status: ReminderStatus) {
-  switch (status) {
-    case ReminderStatus.SENT:
-      return "default";
-    case ReminderStatus.CANCELLED:
-      return "destructive";
-    default:
-      return "secondary";
+  try {
+    const parsedDate = typeof date === "string" ? parseISO(date) : date;
+    return format(parsedDate, "MMMM d, yyyy");
+  } catch (error) {
+    return "Invalid date";
   }
 }
 
-function getStatusColor(status: ReminderStatus): string {
+function getStatusColor(status: string) {
   switch (status) {
-    case ReminderStatus.SENT:
-      return "bg-green-500/20 text-green-300";
-    case ReminderStatus.CANCELLED:
-      return "bg-red-500/20 text-red-300";
+    case "pending":
+      return "bg-amber-500/20 text-amber-500";
+    case "completed":
+      return "bg-green-500/20 text-green-500";
+    case "overdue":
+      return "bg-red-500/20 text-red-500";
     default:
-      return "bg-blue-500/20 text-blue-300";
+      return "bg-zinc-500/20 text-zinc-400";
   }
 }
 
@@ -82,167 +74,227 @@ interface PageProps {
 export default function RemindersPage({ params }: PageProps) {
   const resolvedParams = React.use(params);
   const id = resolvedParams.id;
-  const [reminders, setReminders] = useState<Reminder[]>([]);
+  const router = useRouter();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingReminderId, setDeletingReminderId] = useState<string | null>(
+    null
+  );
+  const [activeTab, setActiveTab] = useState("all");
+  const [isEditMode, setIsEditMode] = useState(false);
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
-  const [deleteReminderId, setDeleteReminderId] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [previewReminder, setPreviewReminder] = useState<Reminder | null>(null);
+  const [viewingReminder, setViewingReminder] = useState<Reminder | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
-  const fetchReminders = React.useCallback(async () => {
-    try {
-      setError(null);
-      setIsLoading(true);
+  // Use the reminder store
+  const {
+    reminders,
+    isLoading,
+    error,
+    fetchReminders,
+    addReminder,
+    deleteReminder,
+    markReminderComplete,
+    updateReminder,
+  } = useReminderStore();
 
-      const response = await fetch(`/api/prospects/${id}/reminders`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to fetch reminders");
-      }
-      const remindersData = await response.json();
-      setReminders(remindersData);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-      toast.error("Failed to load reminders");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [id]);
-
+  // Fetch reminders when the component mounts
   useEffect(() => {
     if (id) {
-      fetchReminders();
+      fetchReminders(id);
     }
   }, [id, fetchReminders]);
 
   const handleAddReminder = async (
-    reminder: Omit<Reminder, "_id" | "createdAt" | "updatedAt" | "addedBy">
+    reminderData: Omit<Reminder, "_id" | "createdAt" | "updatedAt" | "addedBy">
   ) => {
     try {
-      const response = await fetch(`/api/prospects/${id}/reminders`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...reminder,
-          dueDate: reminder.dueDate.toISOString(),
-        }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to add reminder");
+      const result = await addReminder(id, reminderData);
+      if (result) {
+        setIsModalOpen(false);
+        toast.success("Reminder added successfully");
       }
-      setIsModalOpen(false);
-      await fetchReminders();
     } catch (err) {
-      console.error("Error adding reminder:", err);
-      toast.error(
-        err instanceof Error ? err.message : "Failed to add reminder"
-      );
+      toast.error("Failed to add reminder");
     }
   };
 
-  const handleDeleteClick = (reminderId: string) => {
-    setDeleteReminderId(reminderId);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!deleteReminderId) return;
-
-    setIsDeleting(true);
-    const loadingToast = toast.loading("Deleting reminder...");
+  const handleDeleteReminder = async () => {
+    if (!deletingReminderId) return;
 
     try {
-      const response = await fetch(
-        `/api/prospects/${id}/reminders/${deleteReminderId}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to delete reminder");
+      const success = await deleteReminder(id, deletingReminderId);
+      if (success) {
+        toast.success("Reminder deleted successfully");
+      } else {
+        toast.error("Failed to delete reminder");
       }
-
-      setReminders((prevReminders) =>
-        prevReminders.filter((reminder) => reminder._id !== deleteReminderId)
-      );
-      toast.success("Reminder removed successfully", {
-        id: loadingToast,
-      });
-    } catch (err) {
-      console.error("Error deleting reminder:", err);
-      toast.error("Failed to delete reminder", {
-        id: loadingToast,
-      });
-      fetchReminders();
+    } catch (error) {
+      toast.error("An error occurred while deleting the reminder");
     } finally {
-      setIsDeleting(false);
-      setDeleteReminderId(null);
+      setDeleteDialogOpen(false);
+      setDeletingReminderId(null);
     }
   };
 
-  const handleEditClick = (reminder: Reminder) => {
-    setEditingReminder(reminder);
-    setIsEditModalOpen(true);
+  const handleMarkComplete = async (reminderId: string) => {
+    try {
+      const result = await markReminderComplete(id, reminderId);
+      if (result) {
+        toast.success("Reminder marked as complete");
+      }
+    } catch (error) {
+      toast.error("Failed to update reminder status");
+    }
   };
 
-  const handleEditReminder = async (
-    reminder: Omit<Reminder, "_id" | "createdAt" | "updatedAt" | "addedBy">
+  const handleEditReminder = (reminder: Reminder) => {
+    setEditingReminder(reminder);
+    setIsEditMode(true);
+    setIsModalOpen(true);
+  };
+
+  const handleSaveEdit = async (
+    reminderData: Omit<
+      ModalReminder,
+      "_id" | "createdAt" | "updatedAt" | "addedBy"
+    >
   ) => {
     if (!editingReminder) return;
-    try {
-      const response = await fetch(
-        `/api/prospects/${id}/reminders/${editingReminder._id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ...reminder,
-            dueDate: reminder.dueDate.toISOString(),
-          }),
-        }
-      );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to update reminder");
+    try {
+      // Map from ReminderStatus enum to store status strings
+      let storeStatus: "pending" | "completed" | "overdue";
+
+      // Map status
+      switch (reminderData.status) {
+        case "SENT":
+          storeStatus = "completed";
+          break;
+        case "CANCELLED":
+          storeStatus = "overdue";
+          break;
+        case "PENDING":
+        default:
+          storeStatus = "pending";
+          break;
       }
 
-      setIsEditModalOpen(false);
-      setEditingReminder(null);
-      await fetchReminders();
-    } catch (err) {
-      console.error("Error updating reminder:", err);
-      toast.error(
-        err instanceof Error ? err.message : "Failed to update reminder"
+      // Create the adapted reminder
+      const adaptedReminder = {
+        title: reminderData.title,
+        description: reminderData.description,
+        dueDate: reminderData.dueDate,
+        priority: "medium" as const,
+        status: storeStatus,
+        type: reminderData.type,
+      };
+
+      // Call updateReminder from the store
+      const result = await updateReminder(
+        id,
+        editingReminder._id,
+        adaptedReminder
       );
+
+      if (result) {
+        setIsModalOpen(false);
+        setEditingReminder(null);
+        setIsEditMode(false);
+        toast.success("Reminder updated successfully");
+      }
+    } catch (err) {
+      toast.error("Failed to update reminder");
     }
   };
 
-  const openPreviewModal = (reminder: Reminder) => {
-    setPreviewReminder(reminder);
+  const handleViewReminder = (reminder: Reminder) => {
+    setViewingReminder(reminder);
+    setIsViewModalOpen(true);
+  };
+
+  const filteredReminders =
+    activeTab === "all"
+      ? reminders
+      : reminders.filter((reminder) => reminder.status === activeTab);
+
+  // Update the adapter function to properly map statuses and include type
+  const adaptReminderForModal = (
+    reminder: Omit<ModalReminder, "_id" | "createdAt" | "updatedAt" | "addedBy">
+  ) => {
+    // Map from ReminderStatus enum to store status strings
+    let storeStatus: "pending" | "completed" | "overdue";
+
+    // Default to 'pending' if not specified
+    switch (reminder.status) {
+      case "SENT":
+        storeStatus = "completed";
+        break;
+      case "CANCELLED":
+        storeStatus = "overdue";
+        break;
+      case "PENDING":
+      default:
+        storeStatus = "pending";
+        break;
+    }
+
+    // Create the adapted reminder with required store fields
+    const adaptedReminder = {
+      title: reminder.title,
+      description: reminder.description,
+      dueDate: reminder.dueDate,
+      priority: "medium" as const, // Required by store
+      status: storeStatus,
+      type: reminder.type, // Include the type from the modal's form
+    };
+
+    // Call the actual handler with properly typed data
+    return handleAddReminder(adaptedReminder);
+  };
+
+  // Add this function to convert our store's Reminder to the modal's expected format
+  const convertStoreReminderToModalFormat = (
+    reminder: Reminder | null
+  ): Partial<ModalReminder> | undefined => {
+    if (!reminder) return undefined;
+
+    // Map from store status to API status
+    let modalStatus = "PENDING";
+    switch (reminder.status) {
+      case "completed":
+        modalStatus = "SENT";
+        break;
+      case "overdue":
+        modalStatus = "CANCELLED";
+        break;
+      case "pending":
+      default:
+        modalStatus = "PENDING";
+        break;
+    }
+
+    return {
+      _id: reminder._id,
+      title: reminder.title,
+      description: reminder.description,
+      dueDate: reminder.dueDate,
+      status: modalStatus as any, // Force type compatibility
+      type: reminder.type as any, // Force type compatibility
+    };
   };
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4">
+      <div className="container mx-auto py-8 space-y-8">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Skeleton className="h-5 w-5" />
-            <Skeleton className="h-6 w-32" />
-          </div>
-          <Skeleton className="h-9 w-24" />
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-10 w-32" />
         </div>
-
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="rounded-xl overflow-hidden">
-              <Skeleton className="h-[140px] w-full" />
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton key={i} className="h-48 rounded-xl" />
           ))}
         </div>
       </div>
@@ -251,178 +303,194 @@ export default function RemindersPage({ params }: PageProps) {
 
   if (error) {
     return (
-      <Alert variant="destructive" className="mx-auto max-w-2xl m-6">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Error Loading Reminders</AlertTitle>
-        <AlertDescription>{error}</AlertDescription>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={fetchReminders}
-          className="mt-2"
-        >
-          Try Again
-        </Button>
-      </Alert>
+      <div className="container mx-auto py-8">
+        <div className="bg-red-500/10 border border-red-500/20 p-6 rounded-lg">
+          <h2 className="text-xl font-semibold text-red-500 mb-2">Error</h2>
+          <p className="text-gray-200">{error}</p>
+          <Button
+            onClick={() => fetchReminders(id)}
+            variant="outline"
+            className="mt-4"
+          >
+            Try Again
+          </Button>
+        </div>
+      </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="bg-zinc-800 p-2 rounded-full">
-            <Bell className="h-5 w-5 text-zinc-300" />
-          </div>
-          <h1 className="text-xl font-semibold tracking-tight">Reminders</h1>
+    <div className="container mx-auto py-6 px-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Reminders</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage reminders for this prospect
+          </p>
         </div>
-        <Button
-          onClick={() => setIsModalOpen(true)}
-          size="sm"
-          className="rounded-full gap-1.5 font-medium px-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-200"
-        >
-          <Plus className="h-4 w-4" />
+        <Button onClick={() => setIsModalOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
           Add Reminder
         </Button>
       </div>
 
-      {reminders.length === 0 ? (
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 flex flex-col items-center justify-center py-12 px-4">
-          <div className="bg-zinc-800 p-4 rounded-full mb-4">
-            <Bell className="h-10 w-10 text-zinc-400" />
+      <Tabs
+        defaultValue="all"
+        className="space-y-4"
+        value={activeTab}
+        onValueChange={setActiveTab}
+      >
+        <div className="flex justify-between items-center">
+          <TabsList className="bg-zinc-900 border border-zinc-800">
+            <TabsTrigger value="all" className="text-sm">
+              All
+            </TabsTrigger>
+            <TabsTrigger value="pending" className="text-sm">
+              Pending
+            </TabsTrigger>
+            <TabsTrigger value="completed" className="text-sm">
+              Completed
+            </TabsTrigger>
+            <TabsTrigger value="overdue" className="text-sm">
+              Overdue
+            </TabsTrigger>
+          </TabsList>
+          <div className="text-sm text-muted-foreground">
+            {filteredReminders.length} reminder
+            {filteredReminders.length !== 1 ? "s" : ""}
           </div>
-          <h3 className="text-lg font-medium mb-2">No reminders yet</h3>
-          <p className="mb-6 text-sm text-center text-zinc-400 max-w-md">
-            Stay organized by adding reminders for this prospect.
-          </p>
-          <Button
-            onClick={() => setIsModalOpen(true)}
-            className="rounded-full gap-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200"
-          >
-            <Plus className="h-4 w-4" />
-            Add First Reminder
-          </Button>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {reminders.map((reminder) => (
-            <div
-              key={reminder._id}
-              className="relative bg-zinc-900 rounded-xl overflow-hidden ring-1 ring-zinc-800 hover:ring-zinc-700 transition-all duration-200 max-h-[200px] flex flex-col"
-            >
-              {/* Status Bar at Top */}
-              <div
-                className={`h-1.5 w-full ${
-                  getStatusColor(reminder.status).split(" ")[0]
-                }`}
-              ></div>
 
-              {/* Header with Title and Status */}
-              <div className="p-3 pb-1">
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="text-base font-medium text-zinc-100 overflow-hidden text-ellipsis break-words min-h-[3rem] max-h-[3rem] line-clamp-2">
-                    {reminder.title}
-                  </h3>
-                  <div
-                    className={`px-2 py-0.5 rounded-full text-xs ${getStatusColor(
-                      reminder.status
-                    )} flex-shrink-0 whitespace-nowrap mt-0.5`}
-                  >
-                    {reminder.status}
-                  </div>
-                </div>
-              </div>
-
-              {/* Content Area */}
-              <div className="p-3 pt-1 pb-2 flex-1 flex flex-col">
-                <p className="text-sm text-zinc-300 mb-3 overflow-hidden text-ellipsis break-words min-h-[2.75rem] max-h-[2.75rem] line-clamp-2 leading-relaxed">
-                  {reminder.description || "No description provided."}
-                </p>
-
-                <div className="mt-auto space-y-1.5">
-                  <div className="flex items-center text-xs">
-                    <Clock className="h-3.5 w-3.5 mr-1.5 flex-shrink-0 text-zinc-500" />
-                    <span className="truncate text-zinc-400 font-medium">
-                      {formatDate(reminder.dueDate)}
-                    </span>
-                  </div>
-
-                  {reminder.completedAt && (
-                    <div className="flex items-center text-xs">
-                      <CheckCircle2 className="h-3.5 w-3.5 mr-1.5 flex-shrink-0 text-green-400" />
-                      <span className="truncate text-zinc-400 font-medium">
-                        {formatDate(reminder.completedAt)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="border-t border-zinc-800 p-2 flex justify-end gap-1.5 bg-zinc-900/80">
-                <button
-                  onClick={() => openPreviewModal(reminder)}
-                  className="p-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors"
-                >
-                  <Eye className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  onClick={() => handleEditClick(reminder)}
-                  className="p-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  onClick={() => handleDeleteClick(reminder._id)}
-                  className="p-1.5 rounded-full bg-zinc-800 hover:bg-red-800/60 text-zinc-500 hover:text-red-300 transition-colors"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
+        <TabsContent value={activeTab} className="m-0">
+          {filteredReminders.length === 0 ? (
+            <div className="flex flex-col items-center justify-center bg-zinc-900/50 border border-zinc-800 rounded-lg p-8 mt-4">
+              <CalendarIcon className="h-12 w-12 text-zinc-600 mb-3" />
+              <h3 className="text-lg font-medium text-zinc-300">
+                No Reminders
+              </h3>
+              <p className="text-zinc-500 text-center mt-1 max-w-sm">
+                {activeTab === "all"
+                  ? "You haven't created any reminders yet. Add one to get started."
+                  : `No ${activeTab} reminders found.`}
+              </p>
+              <Button
+                onClick={() => setIsModalOpen(true)}
+                variant="outline"
+                className="mt-4"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Reminder
+              </Button>
             </div>
-          ))}
-        </div>
-      )}
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+              {filteredReminders.map((reminder) => (
+                <Card
+                  key={reminder._id}
+                  className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-colors overflow-hidden"
+                >
+                  <CardContent className="p-0 flex flex-col h-full">
+                    <div className="p-4 border-b border-zinc-800 flex-1">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="mr-2 flex-1">
+                          <h3 className="font-medium text-zinc-200 truncate max-w-[200px]">
+                            {reminder.title}
+                          </h3>
+                        </div>
+                        <div
+                          className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${getStatusColor(
+                            reminder.status
+                          )} flex-shrink-0 whitespace-nowrap`}
+                        >
+                          {reminder.status}
+                        </div>
+                      </div>
+
+                      <p className="text-zinc-400 text-sm line-clamp-2 mb-3">
+                        {reminder.description}
+                      </p>
+
+                      <div className="flex items-center gap-2 mt-auto text-sm">
+                        <Clock className="h-3.5 w-3.5 text-zinc-500" />
+                        <span className="text-zinc-300">
+                          {formatDate(reminder.dueDate)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-zinc-800 p-2 flex justify-end gap-1.5 bg-zinc-900/80">
+                      <button
+                        onClick={() => handleViewReminder(reminder)}
+                        className="p-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors"
+                        title="View Details"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                      </button>
+                      {reminder.status !== "completed" && (
+                        <button
+                          onClick={() => handleMarkComplete(reminder._id)}
+                          className="p-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors"
+                          title="Mark as Complete"
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleEditReminder(reminder)}
+                        className="p-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors"
+                        title="Edit Reminder"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setDeletingReminderId(reminder._id);
+                          setDeleteDialogOpen(true);
+                        }}
+                        className="p-1.5 rounded-full bg-zinc-800 hover:bg-red-800/60 text-zinc-500 hover:text-red-300 transition-colors"
+                        title="Delete Reminder"
+                      >
+                        <Trash className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
       <AddEditReminderModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleAddReminder}
-        prospectId={id}
-      />
-
-      <AddEditReminderModal
-        isOpen={isEditModalOpen}
         onClose={() => {
-          setIsEditModalOpen(false);
+          setIsModalOpen(false);
           setEditingReminder(null);
+          setIsEditMode(false);
         }}
-        onSave={handleEditReminder}
+        onSave={isEditMode ? handleSaveEdit : adaptReminderForModal}
         prospectId={id}
-        initialData={editingReminder || undefined}
-        mode="edit"
+        mode={isEditMode ? "edit" : "add"}
+        initialData={convertStoreReminderToModalFormat(editingReminder)}
       />
 
-      <AlertDialog
-        open={!!deleteReminderId}
-        onOpenChange={() => setDeleteReminderId(null)}
-      >
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent className="sm:max-w-[425px]">
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Reminder</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the
-              reminder.
+              Are you sure you want to delete this reminder? This action cannot
+              be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteConfirm}
-              disabled={isDeleting}
+              onClick={handleDeleteReminder}
+              disabled={isLoading}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? (
+              {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Deleting...
@@ -435,102 +503,186 @@ export default function RemindersPage({ params }: PageProps) {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Reminder Preview Modal */}
-      <Dialog
-        open={!!previewReminder}
-        onOpenChange={(open) => !open && setPreviewReminder(null)}
-      >
-        <DialogContent className="sm:max-w-[550px] max-h-[85vh] overflow-hidden flex flex-col bg-zinc-900 border-zinc-800">
-          <DialogHeader className="border-b border-zinc-800 pb-3 flex-shrink-0">
-            <div className="flex items-center justify-between pr-8">
-              <DialogTitle className="text-xl font-semibold text-zinc-100 overflow-hidden text-ellipsis line-clamp-2 break-words mr-2">
-                {previewReminder?.title}
-              </DialogTitle>
+      <Dialog open={false} onOpenChange={() => {}}>
+        {/* Empty Dialog kept for consistency in case there are dependencies */}
+      </Dialog>
+
+      {isViewModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-hidden">
+          <div
+            className="fixed inset-0 bg-black/70"
+            onClick={() => setIsViewModalOpen(false)}
+          ></div>
+
+          <div className="relative bg-zinc-900 w-[450px] rounded-lg shadow-xl border border-zinc-800 flex flex-col z-50 max-h-[550px]">
+            {/* Close button */}
+            <button
+              onClick={() => setIsViewModalOpen(false)}
+              className="absolute right-3 top-3 text-zinc-400 hover:text-white z-10"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            {/* Header - Fixed */}
+            <div className="p-4 border-b border-zinc-800 bg-zinc-900 sticky top-0 z-10">
               <div
-                className={`px-2.5 py-1 rounded-full text-sm font-medium ${
-                  previewReminder && getStatusColor(previewReminder.status)
-                } flex-shrink-0 whitespace-nowrap`}
+                className="overflow-x-auto whitespace-nowrap pb-1 scrollbar-none"
+                title={viewingReminder?.title || ""}
               >
-                {previewReminder?.status}
+                <h2 className="text-base font-bold pr-6 text-white">
+                  {viewingReminder?.title}
+                </h2>
               </div>
-            </div>
-          </DialogHeader>
-
-          <div className="overflow-y-auto flex-1 mt-3 pr-2 custom-scrollbar">
-            <div className="space-y-4">
-              <div className="space-y-2 mb-4">
-                <h4 className="text-sm font-medium text-zinc-300">
-                  Description
-                </h4>
-                <div className="max-h-[150px] overflow-y-auto pr-2 custom-scrollbar border border-zinc-800 rounded-md p-3 bg-zinc-900/50">
-                  <p className="text-base text-zinc-200 whitespace-normal break-words leading-relaxed">
-                    {previewReminder?.description || "No description provided."}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-col space-y-2">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-zinc-500" />
-                  <span className="text-sm font-medium text-zinc-300">
-                    Due:{" "}
-                    {previewReminder && formatDate(previewReminder.dueDate)}
-                  </span>
-                </div>
-
-                {previewReminder?.completedAt && (
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-400" />
-                    <span className="text-sm font-medium text-zinc-300">
-                      Completed: {formatDate(previewReminder.completedAt)}
-                    </span>
-                  </div>
+              <div className="mt-1.5 flex items-center space-x-2">
+                <Badge
+                  variant="outline"
+                  className={`${
+                    viewingReminder?.status &&
+                    getStatusColor(viewingReminder.status)
+                  } px-2 py-0.5 text-xs font-medium`}
+                >
+                  {viewingReminder?.status}
+                </Badge>
+                {viewingReminder?.type && (
+                  <Badge
+                    variant="secondary"
+                    className="px-2 py-0.5 text-xs font-medium"
+                  >
+                    {viewingReminder.type}
+                  </Badge>
                 )}
               </div>
             </div>
-          </div>
 
-          <div className="flex justify-end gap-2 mt-6 pt-3 border-t border-zinc-800 flex-shrink-0">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                if (previewReminder) {
-                  handleEditClick(previewReminder);
-                  setPreviewReminder(null);
-                }
-              }}
-              className="gap-1 bg-zinc-800 border-zinc-700 hover:bg-zinc-700 text-zinc-300"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-              Edit
-            </Button>
-            <DialogClose asChild>
-              <Button
-                size="sm"
-                className="bg-zinc-700 hover:bg-zinc-600 text-zinc-200"
-              >
-                Close
-              </Button>
-            </DialogClose>
+            {/* Body - Scrollable */}
+            <div className="overflow-y-auto" style={{ height: "300px" }}>
+              <div className="p-4 space-y-4">
+                <div>
+                  <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-2">
+                    Description
+                  </h4>
+                  <div className="bg-zinc-800/50 rounded-md p-3">
+                    <p className="whitespace-pre-wrap break-words text-xs text-zinc-300">
+                      {viewingReminder?.description ||
+                        "No description provided."}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-2">
+                      Due Date & Time
+                    </h4>
+                    <div className="flex items-center bg-zinc-800/50 rounded-md p-2">
+                      <CalendarIcon className="h-3.5 w-3.5 mr-2 text-zinc-400" />
+                      <span className="text-xs font-medium text-zinc-300">
+                        {viewingReminder && formatDate(viewingReminder.dueDate)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-2">
+                      Created
+                    </h4>
+                    <div className="flex items-center bg-zinc-800/50 rounded-md p-2">
+                      <Clock className="h-3.5 w-3.5 mr-2 text-zinc-400" />
+                      <span className="text-xs font-medium text-zinc-300">
+                        {viewingReminder && viewingReminder.createdAt
+                          ? formatDate(viewingReminder.createdAt)
+                          : "Not available"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-2">
+                    Associated Prospect
+                  </h4>
+                  <div className="bg-zinc-800/50 rounded-md p-2 flex items-center">
+                    <span className="text-xs font-medium text-zinc-300">
+                      ID: {id}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Extra space at bottom for better scrolling */}
+                <div className="h-4"></div>
+              </div>
+            </div>
+
+            {/* Footer - Fixed */}
+            <div className="border-t border-zinc-800 bg-zinc-800/30 p-3 rounded-b-lg flex flex-col sm:flex-row gap-2 sticky bottom-0 bg-zinc-900 z-10">
+              <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-start">
+                {viewingReminder?.status !== "completed" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (viewingReminder) {
+                        handleMarkComplete(viewingReminder._id);
+                        setIsViewModalOpen(false);
+                      }
+                    }}
+                    className="h-7 text-xs flex items-center gap-1.5 bg-zinc-800 hover:bg-green-900/20 border-green-800 text-green-400"
+                  >
+                    <CheckCircle2 className="h-3 w-3" />
+                    Mark Complete
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (viewingReminder) {
+                      setDeletingReminderId(viewingReminder._id);
+                      setIsViewModalOpen(false);
+                      setDeleteDialogOpen(true);
+                    }
+                  }}
+                  className="h-7 text-xs flex items-center gap-1.5 bg-zinc-800 hover:bg-red-900/20 border-red-800 text-red-400"
+                >
+                  <Trash className="h-3 w-3" />
+                  Delete
+                </Button>
+              </div>
+              <div className="flex gap-2 w-full sm:w-auto justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (viewingReminder) {
+                      setIsViewModalOpen(false);
+                      handleEditReminder(viewingReminder);
+                    }
+                  }}
+                  className="h-7 text-xs flex items-center gap-1.5"
+                >
+                  <Pencil className="h-3 w-3" />
+                  Edit
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => setIsViewModalOpen(false)}
+                  className="h-7 text-xs"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
 
       <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
+        .scrollbar-none::-webkit-scrollbar {
+          display: none;
         }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(30, 30, 30, 0.5);
-          border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(100, 100, 100, 0.5);
-          border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(120, 120, 120, 0.6);
+        .scrollbar-none {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
         }
       `}</style>
     </div>

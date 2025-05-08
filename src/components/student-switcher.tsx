@@ -108,7 +108,7 @@ export function StudentSwitcher({
               sideOffset={4}
             >
               <DropdownMenuLabel className="text-muted-foreground text-xs">
-                Colleges
+                Students
               </DropdownMenuLabel>
               {students.map((student, index) => (
                 <Link
@@ -128,7 +128,7 @@ export function StudentSwitcher({
                 </Link>
               ))}
               <DropdownMenuSeparator />
-              <Link href="/salesperson/prospects">
+              <Link href="/salesperson/prospects/new">
                 <DropdownMenuItem className="gap-2 p-2">
                   <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
                     <Plus className="size-4" />

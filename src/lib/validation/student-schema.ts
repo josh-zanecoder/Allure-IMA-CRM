@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Gender, PreferredContactMethod } from "@/types/prospect";
 
 // Enums as Zod enums
 export const EducationLevelEnum = z.enum([
@@ -31,6 +32,14 @@ export const StatusEnum = z.enum([
   "Graduated",
   "Withdrawn",
   "On Hold",
+]);
+
+// Convert typescript enums to Zod enums
+export const GenderEnum = z.enum([Gender.MALE, Gender.FEMALE, Gender.OTHER]);
+export const PreferredContactMethodEnum = z.enum([
+  PreferredContactMethod.EMAIL,
+  PreferredContactMethod.CALL,
+  PreferredContactMethod.TEXT,
 ]);
 
 // Address schema
@@ -71,7 +80,7 @@ export const ProspectSchema = z
         message:
           "Last name can only contain letters, spaces, hyphens, and apostrophes",
       }),
-    gender: z.enum(["Male", "Female", "Other"]),
+    gender: GenderEnum,
     genderOther: z.string().optional(),
     phone: z.string().regex(/^\(\d{3}\) \d{3}-\d{4}$/, {
       message: "Phone number must be in format (XXX) XXX-XXXX",
@@ -99,10 +108,11 @@ export const ProspectSchema = z
     }),
     addedBy: UserSchema,
     assignedTo: UserSchema,
+    preferredContactMethod: PreferredContactMethodEnum,
   })
   .superRefine((data, ctx) => {
     if (
-      data.gender === "Other" &&
+      data.gender === Gender.OTHER &&
       (!data.genderOther || data.genderOther.trim() === "")
     ) {
       ctx.addIssue({
