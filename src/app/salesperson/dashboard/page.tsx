@@ -23,6 +23,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import Activities from "@/components/salesperson/activities";
+import Reminders from "@/components/salesperson/reminders";
 
 interface Reminder {
   _id: string;
@@ -51,6 +53,8 @@ export default function DashboardPage() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
+  const [isActivitiesModalOpen, setIsActivitiesModalOpen] = useState(false);
+  const [isRemindersModalOpen, setIsRemindersModalOpen] = useState(false);
   const [stats, setStats] = useState<DashboardStats>({
     totalProspects: 0,
     pendingReminders: 0,
@@ -106,6 +110,18 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
+      {/* Activities Modal */}
+      <Activities
+        isOpenModal={isActivitiesModalOpen}
+        onOpenChangeModal={setIsActivitiesModalOpen}
+      />
+
+      {/* Reminders Modal */}
+      <Reminders
+        isOpenModal={isRemindersModalOpen}
+        onOpenChangeModal={setIsRemindersModalOpen}
+      />
+
       {isLoading ? (
         // Skeleton loader
         <>
@@ -322,6 +338,7 @@ export default function DashboardPage() {
                 <Button
                   variant="ghost"
                   className="text-xs sm:text-sm h-8 sm:h-9"
+                  onClick={() => setIsRemindersModalOpen(true)}
                 >
                   View all
                 </Button>
@@ -377,6 +394,7 @@ export default function DashboardPage() {
                 <Button
                   variant="ghost"
                   className="text-xs sm:text-sm h-8 sm:h-9"
+                  onClick={() => setIsActivitiesModalOpen(true)}
                 >
                   View all
                 </Button>

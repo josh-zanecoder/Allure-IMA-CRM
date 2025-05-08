@@ -460,7 +460,7 @@ export default function ProspectsPage() {
                       <TableRow>
                         <TableHead className="w-5"></TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>College Name</TableHead>
+                        <TableHead>Student Name</TableHead>
                         <TableHead className="hidden sm:table-cell">
                           Contact
                         </TableHead>
