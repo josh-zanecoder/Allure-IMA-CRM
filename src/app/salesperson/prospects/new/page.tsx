@@ -111,7 +111,9 @@ export default function AddStudentPage() {
           newErrors[path] = err.message;
         });
         setErrors(newErrors);
-        toast.error("Please fix the validation errors", { id: loadingToast });
+        toast.error("Please fill all the required fields", {
+          id: loadingToast,
+        });
         setIsSubmitting(false);
         return;
       }

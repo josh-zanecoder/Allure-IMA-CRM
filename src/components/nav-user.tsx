@@ -7,6 +7,7 @@ import {
   CreditCard,
   LogOut,
   Sparkles,
+  User,
 } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -103,10 +104,15 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <BadgeCheck />
-                Account
-              </DropdownMenuItem>
+              <button
+                className="w-full"
+                onClick={() => router.push("/salesperson/profile")}
+              >
+                <DropdownMenuItem>
+                  <User />
+                  Account
+                </DropdownMenuItem>
+              </button>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <button className="w-full" onClick={handleLogout}>

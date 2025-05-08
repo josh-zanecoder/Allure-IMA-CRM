@@ -4,8 +4,12 @@ export interface User {
   uid: string;
   email: string | null;
   displayName: string | null;
-  role: string;
+  firstName: string | null;
+  lastName: string | null;
+  photoURL: string | null;
   token: string;
+  role: string;
+  id: string | null;
   twilioNumber: string | null;
   phone?: string | null;
   address?: string | null;
@@ -13,7 +17,6 @@ export interface User {
   lastLogin?: Date;
   createdAt?: Date;
   redirectTo?: string;
-  googleLinked?: boolean;
 }
 
 export interface AuthState {
@@ -30,7 +33,7 @@ export interface LoginCredentials {
 
 export interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
-  google: () => Promise<void>;
   logout: () => Promise<void>;
+  google: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
 }

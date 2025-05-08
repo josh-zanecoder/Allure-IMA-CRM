@@ -17,6 +17,7 @@ export default function Loader({
   const { theme } = useTheme();
   const [isVisible, setIsVisible] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [logoSrc, setLogoSrc] = useState("/allure-logo-dark-sm.png"); // Default logo for SSR
 
   useEffect(() => {
     setIsVisible(true);
@@ -34,14 +35,20 @@ export default function Loader({
     return () => setIsVisible(false);
   }, []);
 
+  // Only change the logo after hydration on the client side
+  useEffect(() => {
+    // Update logo based on theme
+    setLogoSrc(
+      theme === "dark"
+        ? "/allure-logo-light-sm.png"
+        : "/allure-logo-dark-sm.png"
+    );
+  }, [theme]);
+
   const LoaderContent = () => (
     <div className="flex flex-col items-center gap-8">
       <Image
-        src={
-          theme === "dark"
-            ? "/allure-logo-light-sm.png"
-            : "/allure-logo-dark-sm.png"
-        }
+        src={logoSrc}
         alt="Allure IMA Logo"
         width={500}
         height={150}
