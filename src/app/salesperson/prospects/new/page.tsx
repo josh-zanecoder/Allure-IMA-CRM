@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -27,6 +27,21 @@ import {
 } from "@/types/prospect";
 import { ProspectSchema } from "@/lib/validation/student-schema";
 import { useProspectStore } from "@/store/useProspectStore";
+import { CalendarIcon } from "lucide-react";
+
+// Add custom styles to hide date picker icon
+const datePickerStyles = `
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    display: none !important;
+    -webkit-appearance: none;
+    opacity: 0;
+  }
+  input[type="date"]::-webkit-inner-spin-button,
+  input[type="date"]::-webkit-clear-button {
+    display: none;
+    -webkit-appearance: none;
+  }
+`;
 
 const initialFormState: Omit<Student, "id" | "createdAt" | "updatedAt"> = {
   firstName: "",
@@ -70,10 +85,25 @@ export default function AddStudentPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { createProspect, isLoading, error } = useProspectStore();
   const router = useRouter();
+  const [maxDate, setMaxDate] = useState("");
+  const dateInputRef = useRef<HTMLInputElement>(null);
+
+  // Calculate max date (14 years ago)
+  useEffect(() => {
+    const today = new Date();
+    today.setFullYear(today.getFullYear() - 14);
+    setMaxDate(today.toISOString().split("T")[0]);
+  }, []);
 
   const isValidPhoneNumber = (phone: string): boolean => {
     const phoneRegex = /^\(\d{3}\) \d{3}-\d{4}$/;
     return phoneRegex.test(phone);
+  };
+
+  const handleDateIconClick = () => {
+    if (dateInputRef.current) {
+      dateInputRef.current.showPicker();
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -204,9 +234,9 @@ export default function AddStudentPage() {
         {/* Back Button */}
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           onClick={() => router.back()}
-          className="mb-2"
+          className="mb-5"
         >
           ← Back
         </Button>
@@ -290,17 +320,43 @@ export default function AddStudentPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="dateOfBirth">Date of Birth</Label>
-              <Input
-                id="dateOfBirth"
-                name="dateOfBirth"
-                type="date"
-                value={formData.dateOfBirth}
-                onChange={handleChange}
-                className={errors.dateOfBirth ? "border-destructive" : ""}
-              />
-              {errors.dateOfBirth && (
-                <p className="text-xs text-destructive">{errors.dateOfBirth}</p>
-              )}
+              <div className="relative">
+                <style jsx global>
+                  {datePickerStyles}
+                </style>
+                <div className="date-input-container flex w-full max-w-[180px] relative">
+                  <Input
+                    ref={dateInputRef}
+                    id="dateOfBirth"
+                    name="dateOfBirth"
+                    type="date"
+                    value={formData.dateOfBirth}
+                    onChange={handleChange}
+                    max={maxDate}
+                    className={`${
+                      errors.dateOfBirth ? "border-destructive" : ""
+                    } date-input pl-3 pr-10 w-full border border-input bg-transparent`}
+                    style={{
+                      colorScheme: "dark",
+                      WebkitAppearance: "none",
+                      MozAppearance: "none",
+                      appearance: "none",
+                    }}
+                    placeholder="mm/dd/yyyy"
+                  />
+                  <div
+                    className="absolute inset-y-0 right-2 flex items-center cursor-pointer"
+                    onClick={handleDateIconClick}
+                  >
+                    <CalendarIcon className="h-4 w-4 text-gray-400" />
+                  </div>
+                </div>
+                {errors.dateOfBirth && (
+                  <p className="text-xs text-destructive mt-1">
+                    {errors.dateOfBirth}
+                  </p>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -444,7 +500,7 @@ export default function AddStudentPage() {
                 name="address.zip"
                 value={formData.address.zip}
                 onChange={handleChange}
-                placeholder="Enter ZIP code"
+                placeholder="Enter ZIP code (numbers only)"
                 className={errors["address.zip"] ? "border-destructive" : ""}
               />
               {errors["address.zip"] && (

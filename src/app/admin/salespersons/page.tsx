@@ -122,14 +122,19 @@ export default function SalespersonsPage() {
   const handleDeleteSalesperson = async () => {
     if (!deletingSalesperson) return;
 
+    const loadingToast = toast.loading("Deleting salesperson...");
     try {
       setIsDeleting(true);
       await axios.delete(`/api/admin-salespersons/${deletingSalesperson.id}`);
       await fetchSalespersons();
-      toast.success("Salesperson deleted successfully");
+      toast.success("Salesperson deleted successfully", {
+        id: loadingToast,
+      });
     } catch (error) {
       console.error("Error deleting salesperson:", error);
-      toast.error("Failed to delete salesperson");
+      toast.error("Failed to delete salesperson", {
+        id: loadingToast,
+      });
     } finally {
       setIsDeleting(false);
       setDeleteDialogOpen(false);
@@ -294,7 +299,7 @@ export default function SalespersonsPage() {
                   {currentSalespersons.map((person, index) => (
                     <TableRow
                       key={person.id || `salesperson-${index}`}
-                      className="hover:bg-muted/50"
+                      className="hover:bg-muted/50 cursor-pointer"
                     >
                       <TableCell>
                         <div className="flex items-center gap-3">
@@ -390,7 +395,7 @@ export default function SalespersonsPage() {
                           className={
                             currentPage === 1
                               ? "pointer-events-none opacity-50"
-                              : ""
+                              : "cursor-pointer"
                           }
                         />
                       </PaginationItem>
@@ -409,6 +414,7 @@ export default function SalespersonsPage() {
                               <PaginationLink
                                 onClick={() => setCurrentPage(pageNumber)}
                                 isActive={pageNumber === currentPage}
+                                className="cursor-pointer"
                               >
                                 {pageNumber}
                               </PaginationLink>
@@ -442,7 +448,7 @@ export default function SalespersonsPage() {
                           className={
                             currentPage === totalPages
                               ? "pointer-events-none opacity-50"
-                              : ""
+                              : "cursor-pointer"
                           }
                         />
                       </PaginationItem>

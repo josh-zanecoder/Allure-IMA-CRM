@@ -42,12 +42,31 @@ export const PreferredContactMethodEnum = z.enum([
   PreferredContactMethod.TEXT,
 ]);
 
+// Helper function to calculate age from date of birth
+const calculateAge = (dob: string): number => {
+  const birthDate = new Date(dob);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < birthDate.getDate())
+  ) {
+    age--;
+  }
+
+  return age;
+};
+
 // Address schema
 export const AddressSchema = z.object({
   street: z.string().min(1),
   city: z.string().min(1),
   state: z.string().min(1),
-  zip: z.string().min(4),
+  zip: z.string().min(4).regex(/^\d+$/, {
+    message: "ZIP code must contain only numbers",
+  }),
 });
 
 // User schema
@@ -90,9 +109,30 @@ export const ProspectSchema = z
     educationLevel: EducationLevelEnum.refine((val) => val !== undefined, {
       message: "Education level is required",
     }),
-    dateOfBirth: z.string().refine((val) => !isNaN(Date.parse(val)), {
-      message: "Invalid date format",
-    }),
+    dateOfBirth: z
+      .string()
+      .refine((val) => !isNaN(Date.parse(val)), {
+        message: "Invalid date format",
+      })
+      .refine(
+        (val) => {
+          const dateOfBirth = new Date(val);
+          const today = new Date();
+          return dateOfBirth <= today;
+        },
+        {
+          message: "Date of birth cannot be in the future",
+        }
+      )
+      .refine(
+        (val) => {
+          const age = calculateAge(val);
+          return age >= 14;
+        },
+        {
+          message: "Student must be at least 14 years old",
+        }
+      ),
     status: StatusEnum,
     lastContact: z
       .string()

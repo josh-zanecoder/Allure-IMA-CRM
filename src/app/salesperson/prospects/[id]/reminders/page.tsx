@@ -48,7 +48,8 @@ import {
 function formatDate(date: Date | string) {
   try {
     const parsedDate = typeof date === "string" ? parseISO(date) : date;
-    return format(parsedDate, "MMMM d, yyyy");
+    // Format date as "Month Day, Year at h:mm AM/PM"
+    return format(parsedDate, "MMMM d, yyyy 'at' h:mm a");
   } catch (error) {
     return "Invalid date";
   }

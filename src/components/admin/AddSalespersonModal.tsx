@@ -188,10 +188,6 @@ export default function AddSalespersonModal({
 
       console.log("response", response);
 
-      toast.success("Salesperson created successfully!", {
-        id: loadingToast,
-      });
-
       // Send password setup email
       await sendSetPassword(formData.email);
 
@@ -202,6 +198,9 @@ export default function AddSalespersonModal({
         onSalespersonAdded();
       }
 
+      toast.success("Salesperson created successfully!", {
+        id: loadingToast,
+      });
       onClose();
     } catch (error) {
       console.error("Error creating salesperson:", error);
@@ -225,13 +224,7 @@ export default function AddSalespersonModal({
   // Function to send password setup email to newly created salesperson
   const sendSetPassword = async (email: string) => {
     try {
-      const setupToast = toast.loading("Sending password setup email...");
-
       await axios.post("/api/auth/send-password-setup", { email });
-
-      toast.success("Password setup email sent successfully!", {
-        id: setupToast,
-      });
     } catch (error) {
       console.error("Error sending password setup email:", error);
 
@@ -303,7 +296,7 @@ export default function AddSalespersonModal({
             <Input
               id="email"
               name="email"
-              type="email"
+              type="text"
               value={formData.email}
               onChange={handleChange}
               placeholder="john@example.com"

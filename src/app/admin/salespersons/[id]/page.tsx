@@ -70,7 +70,7 @@ export default function SalesPersonDetailPage() {
 
   if (loading)
     return (
-      <div className="w-full px-7 py-12">
+      <div className="w-full px-7 py-0">
         <div className="w-full max-w-6xl mx-auto">
           <Button variant="outline" className="mb-6" disabled>
             <Skeleton className="w-16 h-6" />
@@ -206,10 +206,10 @@ export default function SalesPersonDetailPage() {
   };
 
   return (
-    <div className="w-full px-7 py-12">
+    <div className="w-full px-7 py-0">
       <div className="w-full max-w-6xl mx-auto">
         <Button
-          variant="outline"
+          variant="ghost"
           className="mb-6 group transition-all duration-300 hover:bg-primary/10"
           onClick={() => router.back()}
         >
@@ -222,7 +222,7 @@ export default function SalesPersonDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Profile Card */}
           <Card className="col-span-full lg:col-span-1 rounded-2xl shadow-xl overflow-hidden border-primary/20 border-2">
-            <div className="h-32 bg-muted/20"></div>
+            <div className="h-18"></div>
             <div className="px-6 pb-6 -mt-12 relative flex flex-col items-center">
               <Avatar className="h-24 w-24 ring-4 ring-primary/20 shadow-lg bg-background">
                 <AvatarImage

@@ -50,11 +50,22 @@ import axios from "axios";
 
 function formatDate(date: Date | string) {
   const dateObj = typeof date === "string" ? new Date(date) : date;
-  return dateObj.toLocaleDateString("en-US", {
+
+  // Get date in "Month Day, Year" format
+  const formattedDate = dateObj.toLocaleDateString("en-US", {
     year: "numeric",
-    month: "short",
+    month: "long",
     day: "numeric",
   });
+
+  // Get time in 12-hour format with AM/PM
+  const formattedTime = dateObj.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  return `${formattedDate} at ${formattedTime}`;
 }
 
 function getStatusVariant(
