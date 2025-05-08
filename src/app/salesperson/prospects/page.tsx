@@ -111,13 +111,13 @@ export default function ProspectsPage() {
           searchParams.append("search", searchQuery);
         }
 
-        const response = await fetch(
+        const response = await axios.get(
           `/api/prospects?${searchParams.toString()}`
         );
-        if (!response.ok) {
+        if (response.status !== 200) {
           throw new Error("Failed to fetch prospects");
         }
-        const data = await response.json();
+        const data = response.data;
         setProspects(data.prospects);
         setTotalPages(data.totalPages);
         setTotalCount(data.totalCount);

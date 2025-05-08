@@ -113,7 +113,6 @@ export default function RemindersPage({ params }: PageProps) {
       const result = await addReminder(id, reminderData);
       if (result) {
         setIsModalOpen(false);
-        toast.success("Reminder added successfully");
       }
     } catch (err) {
       toast.error("Failed to add reminder");
@@ -202,7 +201,6 @@ export default function RemindersPage({ params }: PageProps) {
         setIsModalOpen(false);
         setEditingReminder(null);
         setIsEditMode(false);
-        toast.success("Reminder updated successfully");
       }
     } catch (err) {
       toast.error("Failed to update reminder");

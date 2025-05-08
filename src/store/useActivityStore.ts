@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { Activity } from "@/lib/validation/activity-schema";
+import axios from "axios";
 
 interface ActivityState {
   activities: Activity[];
@@ -20,14 +21,14 @@ export const useActivityStore = create<ActivityState>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
 
-      const response = await fetch("/api/activities");
+      const response = await axios.get("/api/activities");
 
-      if (!response.ok) {
-        const errorData = await response.json();
+      if (response.status !== 200) {
+        const errorData = response.data;
         throw new Error(errorData.error || "Failed to fetch activities");
       }
 
-      const data = await response.json();
+      const data = response.data;
       set({ activities: data, isLoading: false });
     } catch (error) {
       console.error("Error fetching activities:", error);

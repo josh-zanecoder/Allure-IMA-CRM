@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import Activities from "@/components/salesperson/activities";
 import Reminders from "@/components/salesperson/reminders";
+import axios from "axios";
 
 interface Reminder {
   _id: string;
@@ -89,9 +90,10 @@ export default function DashboardPage() {
 
   const fetchDashboardData = async () => {
     try {
-      const response = await fetch("/api/salesperson/dashboard");
-      if (!response.ok) throw new Error("Failed to fetch dashboard data");
-      const data = await response.json();
+      const response = await axios.get("/api/salesperson/dashboard");
+      if (response.status !== 200)
+        throw new Error("Failed to fetch dashboard data");
+      const data = response.data;
       setStats((prev) => ({
         ...prev,
         ...data.stats,

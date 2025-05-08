@@ -23,6 +23,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
+import axios from "axios";
 
 interface SalesPerson {
   id: string;
@@ -54,9 +55,9 @@ export default function SalesPersonDetailPage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`/api/admin/salespersons/${id}`);
-        if (!res.ok) throw new Error("Failed to fetch salesperson");
-        const data = await res.json();
+        const res = await axios.get(`/api/admin/salespersons/${id}`);
+        if (res.status !== 200) throw new Error("Failed to fetch salesperson");
+        const data = res.data;
         setSalesperson(data);
       } catch (err) {
         setError((err as Error).message);

@@ -46,6 +46,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import axios from "axios";
 
 function formatDate(date: Date | string) {
   const dateObj = typeof date === "string" ? new Date(date) : date;
@@ -108,15 +109,18 @@ export default function ActivitiesPage({ params }: PageProps) {
       setError(null);
       setIsLoading(true);
 
-      const response = await fetch(`/api/prospects/${id}/activities`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to fetch activities");
-      }
-      const activitiesData = await response.json();
+      const response = await axios.get(`/api/prospects/${id}/activities`);
+      const activitiesData = response.data;
       setActivities(activitiesData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      console.error("Error fetching activities:", err);
+      let errorMessage = "An error occurred";
+      if (axios.isAxiosError(err) && err.response) {
+        errorMessage = err.response.data.error || "Failed to fetch activities";
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      setError(errorMessage);
       toast.error("Failed to load activities");
     } finally {
       setIsLoading(false);
@@ -148,25 +152,22 @@ export default function ActivitiesPage({ params }: PageProps) {
         dueDate = new Date().toISOString();
       }
 
-      const response = await fetch(`/api/prospects/${id}/activities`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...activity,
-          dueDate,
-        }),
+      await axios.post(`/api/prospects/${id}/activities`, {
+        ...activity,
+        dueDate,
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to add activity");
-      }
+
       setIsModalOpen(false);
       await fetchActivities();
     } catch (err) {
       console.error("Error adding activity:", err);
-      toast.error(
-        err instanceof Error ? err.message : "Failed to add activity"
-      );
+      let errorMessage = "Failed to add activity";
+      if (axios.isAxiosError(err) && err.response) {
+        errorMessage = err.response.data.error || "Failed to add activity";
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      toast.error(errorMessage);
     }
   };
 
@@ -181,17 +182,7 @@ export default function ActivitiesPage({ params }: PageProps) {
     const loadingToast = toast.loading("Deleting activity...");
 
     try {
-      const response = await fetch(
-        `/api/prospects/${id}/activities/${deleteActivityId}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to delete activity");
-      }
+      await axios.delete(`/api/prospects/${id}/activities/${deleteActivityId}`);
 
       setActivities((prevActivities) =>
         prevActivities.filter((activity) => activity._id !== deleteActivityId)
@@ -201,12 +192,15 @@ export default function ActivitiesPage({ params }: PageProps) {
       });
     } catch (err) {
       console.error("Error deleting activity:", err);
-      toast.error(
-        err instanceof Error ? err.message : "Failed to delete activity",
-        {
-          id: loadingToast,
-        }
-      );
+      let errorMessage = "Failed to delete activity";
+      if (axios.isAxiosError(err) && err.response) {
+        errorMessage = err.response.data.error || "Failed to delete activity";
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      toast.error(errorMessage, {
+        id: loadingToast,
+      });
       fetchActivities();
     } finally {
       setIsDeleting(false);
@@ -239,62 +233,48 @@ export default function ActivitiesPage({ params }: PageProps) {
         dueDate = new Date().toISOString();
       }
 
-      const response = await fetch(
+      await axios.put(
         `/api/prospects/${id}/activities/${editingActivity._id}`,
         {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ...activity,
-            dueDate,
-          }),
+          ...activity,
+          dueDate,
         }
       );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to update activity");
-      }
 
       setIsEditModalOpen(false);
       setEditingActivity(null);
       await fetchActivities();
     } catch (err) {
       console.error("Error updating activity:", err);
-      toast.error(
-        err instanceof Error ? err.message : "Failed to update activity"
-      );
+      let errorMessage = "Failed to update activity";
+      if (axios.isAxiosError(err) && err.response) {
+        errorMessage = err.response.data.error || "Failed to update activity";
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      toast.error(errorMessage);
     }
   };
 
   const handleMarkComplete = async (activityId: string) => {
     try {
-      const response = await fetch(
-        `/api/prospects/${id}/activities/${activityId}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            status: ActivityStatus.COMPLETED,
-            completedAt: new Date().toISOString(),
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to update activity status");
-      }
+      await axios.put(`/api/prospects/${id}/activities/${activityId}`, {
+        status: ActivityStatus.COMPLETED,
+        completedAt: new Date().toISOString(),
+      });
 
       await fetchActivities();
       toast.success("Activity marked as complete");
     } catch (err) {
       console.error("Error completing activity:", err);
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : "Failed to mark activity as complete"
-      );
+      let errorMessage = "Failed to mark activity as complete";
+      if (axios.isAxiosError(err) && err.response) {
+        errorMessage =
+          err.response.data.error || "Failed to mark activity as complete";
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      toast.error(errorMessage);
     }
   };
 
