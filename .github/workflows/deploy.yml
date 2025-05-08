@@ -2,7 +2,7 @@ name: Allure Deployment
 
 on:
   push:
-    branches: [infra/deployment]
+    branches: [main]
   workflow_dispatch:
 
 env:
