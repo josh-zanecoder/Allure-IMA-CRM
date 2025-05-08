@@ -103,7 +103,7 @@ export default function ActivitiesPage({ params }: PageProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...activity,
-          dueDate: activity.dueDate.toISOString(),
+          dueDate: new Date(activity.dueDate).toISOString(),
         }),
       });
       if (!response.ok) {
@@ -181,7 +181,7 @@ export default function ActivitiesPage({ params }: PageProps) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             ...activity,
-            dueDate: activity.dueDate.toISOString(),
+            dueDate: new Date(activity.dueDate).toISOString(),
           }),
         }
       );
@@ -284,9 +284,10 @@ export default function ActivitiesPage({ params }: PageProps) {
         {activities.map((activity) => (
           <Card
             key={activity._id}
-            className="overflow-hidden border-border/5 bg-card shadow-none hover:shadow-sm transition-shadow"
+            className="w-full rounded-xl shadow-md hover:shadow-lg transition-shadow border-l-4 border-primary bg-white dark:bg-zinc-900 p-2 sm:p-4 relative group"
           >
-            <CardHeader className="border-b border-border/5 bg-card p-3 sm:p-4">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none rounded-xl" />
+            <CardHeader className="border-b border-border/5 bg-transparent p-3 sm:p-4 relative">
               <div className="relative flex flex-col w-full">
                 <div className="flex items-start justify-between w-full">
                   <h3 className="text-sm font-medium text-card-foreground break-all pr-16 sm:pr-20">
@@ -296,7 +297,7 @@ export default function ActivitiesPage({ params }: PageProps) {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 w-7 p-0 hover:bg-destructive/10 hover:text-destructive"
+                      className="h-7 w-7 p-0 hover:bg-destructive/10 hover:text-destructive transition-colors duration-200"
                       onClick={() => handleDeleteClick(activity._id)}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -304,7 +305,7 @@ export default function ActivitiesPage({ params }: PageProps) {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 w-7 p-0 hover:bg-primary/10 hover:text-primary"
+                      className="h-7 w-7 p-0 hover:bg-primary/10 hover:text-primary transition-colors duration-200"
                       onClick={() => handleEditClick(activity)}
                     >
                       <Pencil className="h-3.5 w-3.5" />
@@ -312,25 +313,25 @@ export default function ActivitiesPage({ params }: PageProps) {
                   </div>
                 </div>
                 <Badge
-                  variant={getStatusVariant(activity.status)}
+                  variant={getStatusVariant(activity.status as ActivityStatus)}
                   className="mt-1.5 w-fit text-[10px] sm:text-xs font-normal"
                 >
                   {activity.status}
                 </Badge>
               </div>
             </CardHeader>
-            <CardContent className="space-y-2.5 bg-card p-3 sm:p-4">
+            <CardContent className="space-y-2.5 bg-transparent p-3 sm:p-4 relative">
               <div className="flex items-center gap-2">
                 <Clock className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground truncate">
                   Due: {formatDate(activity.dueDate)}
                 </span>
               </div>
-              {activity.completedAt && (
+              {activity.completedDate && (
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0 text-green-500" />
                   <span className="text-xs text-muted-foreground truncate">
-                    Completed: {formatDate(activity.completedAt)}
+                    Completed: {formatDate(activity.completedDate)}
                   </span>
                 </div>
               )}
@@ -342,8 +343,9 @@ export default function ActivitiesPage({ params }: PageProps) {
         ))}
 
         {activities.length === 0 && (
-          <Card className="col-span-full border-border/5 bg-card">
-            <CardContent className="flex flex-col items-center justify-center py-8 sm:py-12">
+          <Card className="col-span-full border-border/5 bg-white dark:bg-zinc-900 rounded-xl shadow-md p-4 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none rounded-xl" />
+            <CardContent className="flex flex-col items-center justify-center py-8 sm:py-12 relative bg-transparent">
               <Calendar className="h-10 w-10 sm:h-12 sm:w-12 text-primary/20" />
               <h3 className="mt-3 sm:mt-4 text-sm sm:text-base font-medium text-card-foreground">
                 No activities yet

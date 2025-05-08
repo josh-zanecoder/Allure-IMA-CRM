@@ -3,6 +3,8 @@
 import { type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import { redirect } from "next/navigation";
 
 import {
   SidebarGroup,
