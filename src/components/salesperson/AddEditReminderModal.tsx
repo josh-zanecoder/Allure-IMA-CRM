@@ -49,6 +49,12 @@ export default function AddReminderModal({
   initialData,
   mode = "add",
 }: AddReminderModalProps) {
+  const createDefaultDate = () => {
+    const date = new Date();
+    date.setHours(date.getHours() + 1); // Add 1 hour to current time
+    return date;
+  };
+
   const [formData, setFormData] = useState<{
     title: string;
     description: string;
@@ -61,7 +67,7 @@ export default function AddReminderModal({
     description: "",
     type: ReminderType.EMAIL,
     status: ReminderStatus.PENDING,
-    dueDate: new Date(),
+    dueDate: createDefaultDate(),
     isActive: true,
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -71,8 +77,9 @@ export default function AddReminderModal({
       setFormData({
         title: initialData.title || "",
         description: initialData.description || "",
-        type: initialData.type || ReminderType.EMAIL,
-        status: initialData.status || ReminderStatus.PENDING,
+        type: (initialData.type as ReminderType) || ReminderType.EMAIL,
+        status:
+          (initialData.status as ReminderStatus) || ReminderStatus.PENDING,
         dueDate: initialData.dueDate ? new Date(initialData.dueDate) : null,
         isActive: initialData.isActive ?? true,
       });
@@ -82,7 +89,7 @@ export default function AddReminderModal({
         description: "",
         type: ReminderType.EMAIL,
         status: ReminderStatus.PENDING,
-        dueDate: null,
+        dueDate: createDefaultDate(),
         isActive: true,
       });
     }
@@ -95,11 +102,13 @@ export default function AddReminderModal({
     const loadingToast = toast.loading("Saving reminder...");
 
     try {
-      await onSave({
+      const reminderData = {
         ...formData,
-        dueDate: formData.dueDate ?? new Date(),
+        dueDate: formData.dueDate ? formData.dueDate : new Date(),
         prospectId,
-      });
+      };
+
+      await onSave(reminderData);
       toast.success(
         mode === "edit"
           ? "Reminder updated successfully"
@@ -128,6 +137,20 @@ export default function AddReminderModal({
     setFormData((prev) => ({
       ...prev,
       [field]: value,
+    }));
+  };
+
+  const handleTypeChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      type: value as ReminderType,
+    }));
+  };
+
+  const handleStatusChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      status: value as ReminderStatus,
     }));
   };
 
@@ -181,7 +204,7 @@ export default function AddReminderModal({
               </Label>
               <Select
                 value={formData.type}
-                onValueChange={(value) => handleChange("type", value)}
+                onValueChange={handleTypeChange}
                 disabled={isLoading}
               >
                 <SelectTrigger className="text-sm sm:text-base">
@@ -207,7 +230,7 @@ export default function AddReminderModal({
               </Label>
               <Select
                 value={formData.status}
-                onValueChange={(value) => handleChange("status", value)}
+                onValueChange={handleStatusChange}
                 disabled={isLoading}
               >
                 <SelectTrigger className="text-sm sm:text-base">
@@ -228,19 +251,24 @@ export default function AddReminderModal({
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm sm:text-base">Due Date</Label>
+              <Label className="text-sm sm:text-base">Due Date & Time</Label>
               <DatePicker
                 selected={formData.dueDate}
                 onChange={(date) =>
                   setFormData((prev) => ({ ...prev, dueDate: date }))
                 }
                 minDate={new Date()}
-                placeholderText="Pick a date"
+                placeholderText="Pick a date and time"
                 className="w-full text-sm sm:text-base rounded-md border border-input bg-transparent px-3 py-1 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={isLoading}
                 showPopperArrow={false}
                 popperPlacement="bottom-start"
                 customInput={<ReadOnlyInput />}
+                showTimeSelect
+                timeFormat="HH:mm"
+                timeIntervals={15}
+                timeCaption="Time"
+                dateFormat="MMMM d, yyyy h:mm aa"
               />
             </div>
           </div>

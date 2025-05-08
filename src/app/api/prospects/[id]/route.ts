@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import connectToMongoDB from "@/lib/mongoose";
 import Prospect from "@/models/Prospect";
+import Activity from "@/models/Activity";
+import Reminder from "@/models/Reminder";
+import mongoose from "mongoose";
 
 export async function DELETE(
   request: Request,
@@ -8,26 +11,84 @@ export async function DELETE(
 ) {
   try {
     const { id } = params;
-    await connectToMongoDB();
 
-    // Delete the prospect from the database
-    const result = await Prospect.findByIdAndDelete(id);
-
-    if (!result) {
+    // Validate ID format
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
-        { error: "Prospect not found" },
-        { status: 404 }
+        { error: "Invalid prospect ID format" },
+        { status: 400 }
       );
     }
 
-    return NextResponse.json(
-      { message: "Prospect deleted successfully" },
-      { status: 200 }
-    );
+    await connectToMongoDB();
+
+    // Start a session for transaction
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      // Delete the prospect from the database
+      const prospect = await Prospect.findById(id).session(session);
+
+      if (!prospect) {
+        await session.abortTransaction();
+        session.endSession();
+        return NextResponse.json(
+          { error: "Prospect not found" },
+          { status: 404 }
+        );
+      }
+
+      // Delete related activities
+      const deletedActivities = await Activity.deleteMany({
+        prospectId: id,
+      }).session(session);
+
+      // Delete related reminders
+      const deletedReminders = await Reminder.deleteMany({
+        prospectId: id,
+      }).session(session);
+
+      // Delete the prospect
+      await prospect.deleteOne({ session });
+
+      // Check if CallActivity model exists in the project
+      let deletedCallActivities = { deletedCount: 0 };
+      try {
+        const CallActivity = mongoose.model("CallActivity");
+        deletedCallActivities = await CallActivity.deleteMany({
+          prospectId: id,
+        }).session(session);
+      } catch (error) {
+        // Model doesn't exist or other error, continue without deleting call activities
+      }
+
+      // Commit the transaction
+      await session.commitTransaction();
+      session.endSession();
+
+      return NextResponse.json(
+        {
+          message: "Prospect and related data deleted successfully",
+          details: {
+            prospect: 1,
+            activities: deletedActivities.deletedCount,
+            reminders: deletedReminders.deletedCount,
+            callActivities: deletedCallActivities.deletedCount,
+          },
+        },
+        { status: 200 }
+      );
+    } catch (error) {
+      // If anything goes wrong, abort the transaction
+      await session.abortTransaction();
+      session.endSession();
+      throw error;
+    }
   } catch (error) {
     console.error("Error deleting prospect:", error);
     return NextResponse.json(
-      { error: "Failed to delete prospect" },
+      { error: "Failed to delete prospect and related data" },
       { status: 500 }
     );
   }

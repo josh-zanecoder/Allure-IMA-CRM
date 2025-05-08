@@ -55,6 +55,12 @@ export default function AddActivityModal({
   initialData,
   mode = "add",
 }: AddActivityModalProps) {
+  const createDefaultDate = () => {
+    const date = new Date();
+    date.setHours(date.getHours() + 1); // Add 1 hour to current time
+    return date;
+  };
+
   const [formData, setFormData] = useState<{
     title: string;
     description: string;
@@ -67,7 +73,7 @@ export default function AddActivityModal({
     description: "",
     type: ActivityType.TASK,
     status: ActivityStatus.PENDING,
-    dueDate: new Date(),
+    dueDate: createDefaultDate(),
     isActive: true,
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -77,11 +83,12 @@ export default function AddActivityModal({
       setFormData({
         title: initialData.title || "",
         description: initialData.description || "",
-        type: initialData.type || ActivityType.TASK,
-        status: initialData.status || ActivityStatus.PENDING,
+        type: (initialData.type as ActivityType) || ActivityType.TASK,
+        status:
+          (initialData.status as ActivityStatus) || ActivityStatus.PENDING,
         dueDate: initialData.dueDate
           ? new Date(initialData.dueDate)
-          : new Date(),
+          : createDefaultDate(),
         isActive: initialData.isActive ?? true,
       });
     } else {
@@ -90,7 +97,7 @@ export default function AddActivityModal({
         description: "",
         type: ActivityType.TASK,
         status: ActivityStatus.PENDING,
-        dueDate: new Date(),
+        dueDate: createDefaultDate(),
         isActive: true,
       });
     }
@@ -101,11 +108,19 @@ export default function AddActivityModal({
     setIsLoading(true);
     const loadingToast = toast.loading("Saving activity...");
     try {
-      await onSave({
+      // Ensure we have a valid date before calling toISOString()
+      const dueDate =
+        formData.dueDate instanceof Date
+          ? formData.dueDate.toISOString()
+          : new Date().toISOString();
+
+      const activityData = {
         ...formData,
-        dueDate: formData.dueDate ?? new Date(),
+        dueDate,
         prospectId,
-      });
+      };
+
+      await onSave(activityData);
       toast.success(
         mode === "edit"
           ? "Activity updated successfully"
@@ -134,6 +149,20 @@ export default function AddActivityModal({
     setFormData((prev) => ({
       ...prev,
       [field]: value,
+    }));
+  };
+
+  const handleTypeChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      type: value as ActivityType,
+    }));
+  };
+
+  const handleStatusChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      status: value as ActivityStatus,
     }));
   };
 
@@ -190,7 +219,7 @@ export default function AddActivityModal({
               </Label>
               <Select
                 value={formData.type}
-                onValueChange={(value) => handleChange("type", value)}
+                onValueChange={handleTypeChange}
                 disabled={isLoading}
               >
                 <SelectTrigger className="text-sm sm:text-base">
@@ -216,7 +245,7 @@ export default function AddActivityModal({
               </Label>
               <Select
                 value={formData.status}
-                onValueChange={(value) => handleChange("status", value)}
+                onValueChange={handleStatusChange}
                 disabled={isLoading}
               >
                 <SelectTrigger className="text-sm sm:text-base">
@@ -237,19 +266,24 @@ export default function AddActivityModal({
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm sm:text-base">Due Date</Label>
+              <Label className="text-sm sm:text-base">Due Date & Time</Label>
               <DatePicker
                 selected={formData.dueDate}
                 onChange={(date) =>
                   setFormData((prev) => ({ ...prev, dueDate: date }))
                 }
                 minDate={new Date()}
-                placeholderText="Pick a date"
+                placeholderText="Pick a date and time"
                 className="w-full text-sm sm:text-base rounded-md border border-input bg-transparent px-3 py-1 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={isLoading}
                 showPopperArrow={false}
                 popperPlacement="bottom-start"
                 customInput={<ReadOnlyInput />}
+                showTimeSelect
+                timeFormat="HH:mm"
+                timeIntervals={15}
+                timeCaption="Time"
+                dateFormat="MMMM d, yyyy h:mm aa"
               />
             </div>
           </div>

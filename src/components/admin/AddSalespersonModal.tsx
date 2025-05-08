@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CreateSalespersonInput } from "@/types/salesperson";
+import {
+  CreateSalespersonInput,
+  CreateSalespersonInputSchema,
+} from "@/types/salesperson";
 import { formatPhoneNumber, unformatPhoneNumber } from "@/utils/formatters";
 import { toast } from "sonner";
 import {
@@ -17,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { z } from "zod";
 
 interface AddSalespersonModalProps {
   isOpen: boolean;
@@ -36,10 +40,11 @@ export default function AddSalespersonModal({
     phone: "",
     password: "Default@123",
     role: "salesperson",
+    status: "active",
     twilio_number: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Partial<CreateSalespersonInput>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
 
   const resetForm = () => {
@@ -50,6 +55,7 @@ export default function AddSalespersonModal({
       phone: "",
       password: "Default@123",
       role: "salesperson",
+      status: "active",
       twilio_number: "",
     });
     setErrors({});
@@ -69,7 +75,9 @@ export default function AddSalespersonModal({
     }));
 
     if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
+      const newErrors = { ...errors };
+      delete newErrors[field];
+      setErrors(newErrors);
     }
   };
 
@@ -86,65 +94,64 @@ export default function AddSalespersonModal({
       [name]: value,
     }));
 
-    if (errors[name as keyof CreateSalespersonInput]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }));
+    if (errors[name]) {
+      const newErrors = { ...errors };
+      delete newErrors[name];
+      setErrors(newErrors);
     }
+
     if (apiError) {
       setApiError(null);
     }
   };
 
-  const validateForm = (): boolean => {
-    const newErrors: Partial<CreateSalespersonInput> = {};
+  const validateForm = () => {
+    try {
+      // Add enhanced validation rules
+      if (formData.first_name.length < 2) {
+        setErrors({ first_name: "First name must be at least 2 characters" });
+        return false;
+      }
 
-    if (!formData.first_name.trim()) {
-      newErrors.first_name = "First name is required";
+      if (formData.last_name.length < 2) {
+        setErrors({ last_name: "Last name must be at least 2 characters" });
+        return false;
+      }
+
+      if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+        setErrors({ email: "Please enter a valid email address" });
+        return false;
+      }
+
+      if (formData.phone.length < 10) {
+        setErrors({ phone: "Phone number is required" });
+        return false;
+      }
+
+      // Validate the data with the schema
+      CreateSalespersonInputSchema.parse(formData);
+      setErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        // Format Zod errors into simple format
+        const formattedErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          const field = err.path[0].toString();
+          formattedErrors[field] = err.message;
+        });
+        setErrors(formattedErrors);
+      }
+      return false;
     }
-
-    if (!formData.last_name.trim()) {
-      newErrors.last_name = "Last name is required";
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Invalid email format";
-    }
-
-    const phoneRegex =
-      /^\+?1?\s*\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})$/;
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = "Phone is required";
-    } else if (!phoneRegex.test(unformatPhoneNumber(formData.phone))) {
-      newErrors.phone = "Invalid phone number format";
-    }
-
-    if (
-      formData.twilio_number &&
-      !phoneRegex.test(unformatPhoneNumber(formData.twilio_number))
-    ) {
-      newErrors.twilio_number = "Invalid Twilio number format";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setApiError(null);
 
-    if (!validateForm()) {
-      if (errors.phone) {
-        toast.error("Please enter a valid phone number");
-      }
-      if (errors.twilio_number) {
-        toast.error("Please enter a valid Twilio number");
-      }
-      toast.error("Please fix the form errors before submitting");
-      return;
-    }
+    // Validate form data
+    if (!validateForm()) return;
 
     setIsSubmitting(true);
     const loadingToast = toast.loading("Creating new salesperson...");

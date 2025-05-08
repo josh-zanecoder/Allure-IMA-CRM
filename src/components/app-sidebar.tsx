@@ -76,6 +76,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   }, [getUser]);
 
   useEffect(() => {
+    if (!userData || !userRole || !students) {
+      setLoading(false);
+      return;
+    }
     const updateSidebarData = async () => {
       try {
         const updatedUser = {
