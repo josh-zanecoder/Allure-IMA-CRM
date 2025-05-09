@@ -78,7 +78,7 @@ export const UserSchema = z.object({
   id: z.string(),
   firstName: z.string(),
   lastName: z.string(),
-  email: z.string().email(),
+  email: z.string(),
   role: z.string(),
 });
 
@@ -105,7 +105,7 @@ export const ProspectSchema = z.object({
   phone: z.string().regex(/^\(\d{3}\) \d{3}-\d{4}$/, {
     message: "Phone number must be in format (XXX) XXX-XXXX",
   }),
-  email: z.string().email().optional(),
+  email: z.string().optional(),
   address: AddressSchema.optional(),
   educationLevel: EducationLevelEnum.optional(),
   programInterest: InterestEnum.optional(),
