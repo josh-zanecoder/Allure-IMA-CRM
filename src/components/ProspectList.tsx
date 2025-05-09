@@ -58,7 +58,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 // Utility function to remove special characters from phone number
 const unformatPhoneNumber = (phone: string) => {
-  return phone.replace(/[^\d+]/g, "");
+  return phone.replace(/[^\d+]/g, '').replace(/^\+1/, '');
 };
 
 export function ProspectList() {
