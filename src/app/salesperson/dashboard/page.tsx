@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import Activities from "@/components/salesperson/activities";
 import Reminders from "@/components/salesperson/reminders";
+import axios from "axios";
 
 interface Reminder {
   _id: string;
@@ -89,9 +90,10 @@ export default function DashboardPage() {
 
   const fetchDashboardData = async () => {
     try {
-      const response = await fetch("/api/salesperson/dashboard");
-      if (!response.ok) throw new Error("Failed to fetch dashboard data");
-      const data = await response.json();
+      const response = await axios.get("/api/salesperson/dashboard");
+      if (response.status !== 200)
+        throw new Error("Failed to fetch dashboard data");
+      const data = response.data;
       setStats((prev) => ({
         ...prev,
         ...data.stats,
@@ -449,7 +451,7 @@ export default function DashboardPage() {
                             isExpiredReminder
                               ? "border-2 border-red-500 bg-red-50/10"
                               : isDueSoonReminder
-                              ? "border-red-400"
+                              ? "border-yellow-400"
                               : isAlmostDue
                               ? "border-yellow-400"
                               : ""
@@ -487,8 +489,8 @@ export default function DashboardPage() {
                             )}
                             {isDueSoonReminder && !isExpiredReminder && (
                               <Badge
-                                variant="destructive"
-                                className="flex items-center gap-1 whitespace-nowrap text-[10px] sm:text-xs"
+                                variant="outline"
+                                className="flex items-center gap-1 whitespace-nowrap text-[10px] sm:text-xs border-yellow-400 text-yellow-600"
                               >
                                 <ExclamationTriangleIcon className="h-3 w-3" />
                                 Due Soon
@@ -579,9 +581,9 @@ export default function DashboardPage() {
                           key={activity._id}
                           className={`flex items-start justify-between p-3 sm:p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors ${
                             isExpiredActivity
-                              ? "border-2 border-red-500 bg-red-50/10"
+                              ? "border-2 border-red-500"
                               : isDueSoonActivity
-                              ? "border-red-400"
+                              ? "border-yellow-400"
                               : isAlmostDue
                               ? "border-yellow-400"
                               : ""
@@ -631,8 +633,8 @@ export default function DashboardPage() {
                             )}
                             {isDueSoonActivity && !isExpiredActivity && (
                               <Badge
-                                variant="destructive"
-                                className="flex items-center gap-1 whitespace-nowrap text-[10px] sm:text-xs"
+                                variant="outline"
+                                className="flex items-center gap-1 whitespace-nowrap text-[10px] sm:text-xs border-yellow-400 text-yellow-600"
                               >
                                 <ExclamationTriangleIcon className="h-3 w-3" />
                                 Due Soon

@@ -247,7 +247,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await axios.post("/api/auth/logout");
       // Clear cookies with secure flags
       const clearCookieOptions = {
         path: "/",
@@ -301,16 +301,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error("Invalid session data");
       }
 
-      const response = await fetch("/api/auth/verify", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ token, user }),
+      const response = await axios.post("/api/auth/verify", {
+        token,
+        user,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
+      if (response.status !== 200) {
+        const errorData = response.data;
 
         // If token is expired, try to refresh it
         if (errorData.error === "Token has expired") {
@@ -321,19 +318,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             document.cookie = `token=${newToken}; path=/; max-age=86400; SameSite=Strict`;
 
             // Retry verification with new token
-            const retryResponse = await fetch("/api/auth/verify", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ token: newToken, user }),
+            const retryResponse = await axios.post("/api/auth/verify", {
+              token: newToken,
+              user,
             });
 
-            if (!retryResponse.ok) {
+            if (retryResponse.status !== 200) {
               throw new Error("Failed to refresh token");
             }
 
-            const retryData = await retryResponse.json();
+            const retryData = retryResponse.data;
             return retryData.user;
           }
         }
@@ -341,7 +335,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(errorData.error || "Session invalid");
       }
 
-      const data = await response.json();
+      const data = response.data;
 
       if (!data.valid || !data.user) {
         throw new Error("Invalid session data");

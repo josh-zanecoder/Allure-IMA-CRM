@@ -64,6 +64,11 @@ export async function PUT(
       updatedData.phone = unformatPhoneNumber(updatedData.phone);
     }
 
+    // Clear genderOther if gender is not 'Other'
+    if (updatedData.gender && updatedData.gender !== "Other") {
+      updatedData.genderOther = "";
+    }
+
     // validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

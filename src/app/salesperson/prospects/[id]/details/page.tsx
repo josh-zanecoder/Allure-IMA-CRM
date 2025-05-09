@@ -1,7 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Prospect, EducationLevel, Interest, Status } from "@/types/prospect";
+import {
+  Prospect,
+  EducationLevel,
+  Interest,
+  Status,
+  Gender,
+  PreferredContactMethod,
+} from "@/types/prospect";
 import { formatAddress, formatPhoneNumber } from "@/utils/formatters";
 import { useRouter } from "next/navigation";
 import {
@@ -18,6 +25,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
+import { useProspectStore } from "@/store/useProspectStore";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,7 +53,6 @@ import {
   CommandGroup,
   CommandItem,
 } from "@/components/ui/command";
-import axios from "axios";
 
 const formatDateForDisplay = (dateString: string) => {
   try {
@@ -71,57 +78,53 @@ export default function ProspectDetailsPage({ params }: PageProps) {
   const router = useRouter();
   const resolvedParams = React.use(params);
   const id = resolvedParams.id;
-  const [prospect, setProspect] = useState<Prospect | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+
+  const {
+    currentProspect,
+    isLoading,
+    error,
+    fetchProspectById,
+    updateProspect,
+  } = useProspectStore();
+
   const [isEditing, setIsEditing] = useState(false);
   const [editedProspect, setEditedProspect] = useState<Prospect | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    const fetchProspect = async () => {
+    const loadProspect = async () => {
       if (!id) {
         toast.error("Invalid prospect ID");
-        setIsLoading(false);
         return;
       }
 
       try {
-        setIsLoading(true);
-        const response = await axios.get(`/api/prospects/${id}/details`);
-
-        console.log("Response data:", response.data);
-
-        if (!response.data) {
-          throw new Error("Failed to fetch prospect");
-        }
-
-        setProspect(response.data);
-        setEditedProspect(response.data);
+        await fetchProspectById(id);
       } catch (error) {
-        console.error("Error fetching prospect:", error);
-        toast.error(
-          error instanceof Error ? error.message : "Failed to fetch prospect"
-        );
-        setProspect(null);
-        setEditedProspect(null);
-      } finally {
-        setIsLoading(false);
+        console.error("Error in component when fetching prospect:", error);
       }
     };
 
     if (id) {
-      fetchProspect();
+      loadProspect();
     }
-  }, [id]);
+  }, [id, fetchProspectById]);
+
+  // Update local state when the currentProspect changes
+  useEffect(() => {
+    if (currentProspect) {
+      setEditedProspect(currentProspect);
+    }
+  }, [currentProspect]);
 
   const handleEdit = () => {
     setIsEditing(true);
-    setEditedProspect(prospect);
+    setEditedProspect(currentProspect);
   };
 
   const handleCancel = () => {
     setIsEditing(false);
-    setEditedProspect(prospect);
+    setEditedProspect(currentProspect);
   };
 
   const handleChange = (field: string, value: string | string[] | boolean) => {
@@ -153,6 +156,23 @@ export default function ProspectDetailsPage({ params }: PageProps) {
       return;
     }
 
+    if (field === "gender") {
+      // Clear genderOther if gender is not "Other"
+      if (value !== Gender.OTHER) {
+        setEditedProspect({
+          ...editedProspect,
+          gender: value as Gender,
+          genderOther: "",
+        });
+      } else {
+        setEditedProspect({
+          ...editedProspect,
+          gender: value as Gender,
+        });
+      }
+      return;
+    }
+
     if (field.startsWith("address.")) {
       const addressField = field.split(".")[1];
       setEditedProspect({
@@ -176,27 +196,21 @@ export default function ProspectDetailsPage({ params }: PageProps) {
   };
 
   const handleSave = async () => {
-    if (!prospect || !editedProspect) return;
+    if (!editedProspect || !id) return;
     setIsSaving(true);
     const loadingToast = toast.loading("Saving prospect...");
 
     try {
-      const response = await axios.put(
-        `/api/prospects/${id}/details`,
-        editedProspect
-      );
+      const updatedProspect = await updateProspect(id, editedProspect);
 
-      if (response.status === 401) {
-        router.push("/login");
-        return;
+      if (updatedProspect) {
+        setIsEditing(false);
+        toast.success("Prospect updated successfully", {
+          id: loadingToast,
+        });
+      } else {
+        throw new Error("Failed to update prospect");
       }
-
-      setProspect(response.data);
-      setEditedProspect(response.data);
-      setIsEditing(false);
-      toast.success("Prospect updated successfully", {
-        id: loadingToast,
-      });
     } catch (error) {
       console.error("Error updating prospect:", error);
       toast.error("Failed to update prospect", {
@@ -261,7 +275,27 @@ export default function ProspectDetailsPage({ params }: PageProps) {
     );
   }
 
-  if (!prospect || !editedProspect) {
+  if (error) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-foreground">
+            Error Loading Prospect
+          </h2>
+          <p className="mt-2 text-muted-foreground">{error}</p>
+          <Button
+            className="mt-4"
+            onClick={() => fetchProspectById(id)}
+            variant="outline"
+          >
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentProspect || !editedProspect) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="text-center">
@@ -361,7 +395,50 @@ export default function ProspectDetailsPage({ params }: PageProps) {
                 </>
               ) : (
                 <p className="text-sm sm:text-base text-foreground">
-                  {prospect.firstName} {prospect.lastName}
+                  {currentProspect.firstName} {currentProspect.lastName}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm sm:text-base">Gender</Label>
+              {isEditing ? (
+                <div>
+                  <Select
+                    value={editedProspect.gender}
+                    onValueChange={(value) => handleChange("gender", value)}
+                  >
+                    <SelectTrigger className="text-sm sm:text-base">
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.values(Gender).map((gender) => (
+                        <SelectItem key={gender} value={gender}>
+                          {gender}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {editedProspect.gender === Gender.OTHER && (
+                    <div className="mt-2">
+                      <Input
+                        value={editedProspect.genderOther || ""}
+                        onChange={(e) =>
+                          handleChange("genderOther", e.target.value)
+                        }
+                        placeholder="Please specify gender"
+                        className="text-sm sm:text-base"
+                      />
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm sm:text-base text-foreground">
+                  {currentProspect.gender === Gender.OTHER
+                    ? `${currentProspect.gender} (${
+                        currentProspect.genderOther || "Not specified"
+                      })`
+                    : currentProspect.gender}
                 </p>
               )}
             </div>
@@ -391,7 +468,7 @@ export default function ProspectDetailsPage({ params }: PageProps) {
                 <div className="flex items-center">
                   <Phone className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground mr-2" />
                   <span className="text-sm sm:text-base text-foreground">
-                    {formatPhoneNumber(prospect.phone)}
+                    {formatPhoneNumber(currentProspect.phone)}
                   </span>
                 </div>
               )}
@@ -416,8 +493,39 @@ export default function ProspectDetailsPage({ params }: PageProps) {
                 <div className="flex items-center">
                   <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground mr-2" />
                   <span className="text-sm sm:text-base text-foreground">
-                    {prospect.email}
+                    {currentProspect.email}
                   </span>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm sm:text-base">
+                Preferred Contact Method
+              </Label>
+              {isEditing ? (
+                <Select
+                  value={editedProspect.preferredContactMethod}
+                  onValueChange={(value) =>
+                    handleChange("preferredContactMethod", value)
+                  }
+                >
+                  <SelectTrigger className="text-sm sm:text-base">
+                    <SelectValue placeholder="Select contact method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.values(PreferredContactMethod).map((method) => (
+                      <SelectItem key={method} value={method}>
+                        {method}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="flex items-center">
+                  <Badge variant="outline" className="text-xs sm:text-sm">
+                    {currentProspect.preferredContactMethod}
+                  </Badge>
                 </div>
               )}
             </div>
@@ -499,7 +607,7 @@ export default function ProspectDetailsPage({ params }: PageProps) {
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-2">
-                  {(prospect.interests || []).map((interest, index) => (
+                  {(currentProspect.interests || []).map((interest, index) => (
                     <Badge
                       key={index}
                       variant="secondary"
@@ -569,7 +677,7 @@ export default function ProspectDetailsPage({ params }: PageProps) {
                   <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground mr-2 mt-0.5" />
                   <div>
                     <p className="text-sm sm:text-base text-foreground">
-                      {formatAddress(prospect.address)}
+                      {formatAddress(currentProspect.address)}
                     </p>
                   </div>
                 </div>
@@ -598,7 +706,7 @@ export default function ProspectDetailsPage({ params }: PageProps) {
                 <div className="flex items-center">
                   <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground mr-2" />
                   <Badge variant="secondary" className="text-xs sm:text-sm">
-                    {prospect.status}
+                    {currentProspect.status}
                   </Badge>
                 </div>
               )}
@@ -627,7 +735,7 @@ export default function ProspectDetailsPage({ params }: PageProps) {
               ) : (
                 <div className="flex items-center">
                   <Badge variant="secondary" className="text-xs sm:text-sm">
-                    {prospect.educationLevel}
+                    {currentProspect.educationLevel}
                   </Badge>
                 </div>
               )}
@@ -649,7 +757,7 @@ export default function ProspectDetailsPage({ params }: PageProps) {
                   <div className="flex items-center">
                     <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground mr-2" />
                     <span className="text-sm sm:text-base text-foreground">
-                      {formatDateForDisplay(prospect.dateOfBirth)}
+                      {formatDateForDisplay(currentProspect.dateOfBirth)}
                     </span>
                   </div>
                 )}
@@ -667,7 +775,7 @@ export default function ProspectDetailsPage({ params }: PageProps) {
                 ) : (
                   <div className="flex items-center">
                     <span className="text-sm sm:text-base text-foreground">
-                      {prospect.notes || "No notes"}
+                      {currentProspect.notes || "No notes"}
                     </span>
                   </div>
                 )}

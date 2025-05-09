@@ -39,10 +39,11 @@ export function NavUser({
     name: string;
     email: string;
     avatar: string;
+    role?: string;
   };
 }) {
   const { isMobile } = useSidebar();
-  const { logout } = useAuth();
+  const { logout, user: authUser } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -57,6 +58,21 @@ export function NavUser({
       router.push("/login");
     } catch (error) {
       console.error("Logout error:", error);
+    }
+  };
+
+  const handleProfileClick = () => {
+    // Get the user role from either the passed user prop or the auth context
+    const userRole = user.role || authUser?.role;
+
+    // Redirect based on role
+    if (userRole === "admin") {
+      router.push("/admin/profile");
+    } else if (userRole === "salesperson") {
+      router.push("/salesperson/profile");
+    } else {
+      // Default fallback if role is unknown
+      router.push("/profile");
     }
   };
 
@@ -104,10 +120,7 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <button
-                className="w-full"
-                onClick={() => router.push("/salesperson/profile")}
-              >
+              <button className="w-full" onClick={handleProfileClick}>
                 <DropdownMenuItem>
                   <User />
                   Account

@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Activity } from "@/lib/validation/activity-schema";
 import { Loader2 } from "lucide-react";
-import { useActivityStore } from "@/store/activityStore";
+import { useActivityStore } from "@/store/useActivityStore";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -159,7 +159,7 @@ export default function Activities({
                     ? "border-2 border-red-500 bg-red-50/10"
                     : isDueSoon(activity.dueDate as string) &&
                       activity.status === "PENDING"
-                    ? "border-red-400"
+                    ? "border-yellow-400"
                     : isAlmostDue(activity.dueDate as string) &&
                       activity.status === "PENDING"
                     ? "border-yellow-400"
@@ -186,8 +186,8 @@ export default function Activities({
                         activity.status
                       ) && (
                         <Badge
-                          variant="destructive"
-                          className="whitespace-nowrap"
+                          variant="outline"
+                          className="whitespace-nowrap border-yellow-400 text-yellow-600"
                         >
                           Due Soon
                         </Badge>
