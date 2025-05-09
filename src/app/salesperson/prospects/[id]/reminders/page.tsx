@@ -319,7 +319,7 @@ export default function RemindersPage({ params }: PageProps) {
   }
 
   return (
-    <div className="container mx-auto py-4 sm:py-6 px-2 sm:px-4">
+    <div className="container mx-auto py-4 sm:py-6 px-2 sm:px-4 bg-white dark:bg-zinc-950">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-4 sm:mb-6">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
@@ -346,7 +346,7 @@ export default function RemindersPage({ params }: PageProps) {
       >
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
           <div className="w-full sm:w-auto overflow-x-auto scrollbar-none pb-1 -mx-2 px-2">
-            <TabsList className="bg-zinc-900 border border-zinc-800 w-max sm:w-auto mb-2 sm:mb-0 flex-nowrap min-w-full">
+            <TabsList className="bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 w-max sm:w-auto mb-2 sm:mb-0 flex-nowrap min-w-full">
               <TabsTrigger
                 value="all"
                 className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
@@ -381,12 +381,12 @@ export default function RemindersPage({ params }: PageProps) {
 
         <TabsContent value={activeTab} className="m-0">
           {filteredReminders.length === 0 ? (
-            <div className="flex flex-col items-center justify-center bg-zinc-900/50 border border-zinc-800 rounded-lg p-4 sm:p-8 mt-2 sm:mt-4">
-              <CalendarIcon className="h-10 w-10 sm:h-12 sm:w-12 text-zinc-600 mb-2 sm:mb-3" />
-              <h3 className="text-base sm:text-lg font-medium text-zinc-300">
+            <div className="flex flex-col items-center justify-center bg-gray-50 dark:bg-zinc-950/50 border border-gray-200 dark:border-zinc-800 rounded-lg p-4 sm:p-8 mt-2 sm:mt-4">
+              <CalendarIcon className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 dark:text-zinc-600 mb-2 sm:mb-3" />
+              <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-zinc-300">
                 No Reminders
               </h3>
-              <p className="text-zinc-500 text-xs sm:text-sm text-center mt-1 max-w-sm">
+              <p className="text-gray-500 dark:text-zinc-500 text-xs sm:text-sm text-center mt-1 max-w-sm">
                 {activeTab === "all"
                   ? "You haven't created any reminders yet. Add one to get started."
                   : `No ${activeTab} reminders found.`}
@@ -406,13 +406,13 @@ export default function RemindersPage({ params }: PageProps) {
               {filteredReminders.map((reminder) => (
                 <Card
                   key={reminder._id}
-                  className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-colors overflow-hidden"
+                  className="bg-white dark:bg-zinc-950 border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700 transition-colors overflow-hidden"
                 >
                   <CardContent className="p-0 flex flex-col h-full">
-                    <div className="p-3 sm:p-4 border-b border-zinc-800 flex-1">
+                    <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-zinc-800 flex-1 bg-gray-50/50 dark:bg-zinc-900/20">
                       <div className="flex items-start justify-between mb-2">
                         <div className="mr-2 flex-1">
-                          <h3 className="font-medium text-sm sm:text-base text-zinc-200 truncate max-w-[200px]">
+                          <h3 className="font-medium text-sm sm:text-base text-gray-900 dark:text-zinc-200 truncate max-w-[200px]">
                             {reminder.title}
                           </h3>
                         </div>
@@ -425,22 +425,22 @@ export default function RemindersPage({ params }: PageProps) {
                         </div>
                       </div>
 
-                      <p className="text-zinc-400 text-xs sm:text-sm line-clamp-2 mb-2 sm:mb-3">
+                      <p className="text-gray-600 dark:text-zinc-400 text-xs sm:text-sm line-clamp-2 mb-2 sm:mb-3">
                         {reminder.description}
                       </p>
 
                       <div className="flex items-center gap-1 sm:gap-2 mt-auto text-xs sm:text-sm">
-                        <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-zinc-500" />
-                        <span className="text-zinc-300 truncate">
+                        <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-gray-400 dark:text-zinc-500" />
+                        <span className="text-gray-700 dark:text-zinc-300 truncate">
                           {formatDate(reminder.dueDate)}
                         </span>
                       </div>
                     </div>
 
-                    <div className="border-t border-zinc-800 p-1.5 sm:p-2 flex justify-end gap-1 sm:gap-1.5 bg-zinc-900/80">
+                    <div className="border-t border-gray-200 dark:border-zinc-800 p-1.5 sm:p-2 flex justify-end gap-1 sm:gap-1.5 bg-white/80 dark:bg-zinc-950/80">
                       <button
                         onClick={() => handleViewReminder(reminder)}
-                        className="p-1 sm:p-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors"
+                        className="p-1 sm:p-1.5 rounded-full bg-gray-200 dark:bg-zinc-800 hover:bg-gray-300 dark:hover:bg-zinc-700 text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300 transition-colors"
                         title="View Details"
                       >
                         <Eye className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
@@ -448,7 +448,7 @@ export default function RemindersPage({ params }: PageProps) {
                       {reminder.status !== "completed" && (
                         <button
                           onClick={() => handleMarkComplete(reminder._id)}
-                          className="p-1 sm:p-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors"
+                          className="p-1 sm:p-1.5 rounded-full bg-gray-200 dark:bg-zinc-800 hover:bg-gray-300 dark:hover:bg-zinc-700 text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300 transition-colors"
                           title="Mark as Complete"
                         >
                           <CheckCircle2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
@@ -456,7 +456,7 @@ export default function RemindersPage({ params }: PageProps) {
                       )}
                       <button
                         onClick={() => handleEditReminder(reminder)}
-                        className="p-1 sm:p-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors"
+                        className="p-1 sm:p-1.5 rounded-full bg-gray-200 dark:bg-zinc-800 hover:bg-gray-300 dark:hover:bg-zinc-700 text-gray-500 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300 transition-colors"
                         title="Edit Reminder"
                       >
                         <Pencil className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
@@ -466,7 +466,7 @@ export default function RemindersPage({ params }: PageProps) {
                           setDeletingReminderId(reminder._id);
                           setDeleteDialogOpen(true);
                         }}
-                        className="p-1 sm:p-1.5 rounded-full bg-zinc-800 hover:bg-red-800/60 text-zinc-500 hover:text-red-300 transition-colors"
+                        className="p-1 sm:p-1.5 rounded-full bg-gray-200 dark:bg-zinc-800 hover:bg-red-200 dark:hover:bg-red-800/60 text-gray-500 dark:text-zinc-500 hover:text-red-700 dark:hover:text-red-300 transition-colors"
                         title="Delete Reminder"
                       >
                         <Trash className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
@@ -494,7 +494,7 @@ export default function RemindersPage({ params }: PageProps) {
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent className="sm:max-w-[425px]">
+        <AlertDialogContent className="sm:max-w-[425px] bg-white dark:bg-zinc-950 border-gray-200 dark:border-zinc-800">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Reminder</AlertDialogTitle>
             <AlertDialogDescription>
@@ -529,26 +529,26 @@ export default function RemindersPage({ params }: PageProps) {
       {isViewModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 overflow-hidden">
           <div
-            className="fixed inset-0 bg-black/70"
+            className="fixed inset-0 bg-gray-500/80 dark:bg-black/80"
             onClick={() => setIsViewModalOpen(false)}
           ></div>
 
-          <div className="relative bg-zinc-900 w-full max-w-[450px] rounded-lg shadow-xl border border-zinc-800 flex flex-col z-50 max-h-[90vh] sm:max-h-[550px]">
+          <div className="relative bg-white dark:bg-zinc-950 w-full max-w-[450px] rounded-lg shadow-xl border border-gray-200 dark:border-zinc-800 flex flex-col z-50 max-h-[90vh] sm:max-h-[550px]">
             {/* Close button */}
             <button
               onClick={() => setIsViewModalOpen(false)}
-              className="absolute right-2 sm:right-3 top-2 sm:top-3 text-zinc-400 hover:text-white z-10"
+              className="absolute right-2 sm:right-3 top-2 sm:top-3 text-gray-400 dark:text-zinc-400 hover:text-gray-600 dark:hover:text-white z-10"
             >
               <X className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
 
             {/* Header - Fixed */}
-            <div className="p-3 sm:p-4 border-b border-zinc-800 bg-zinc-900 sticky top-0 z-10">
+            <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900 sticky top-0 z-10">
               <div
                 className="overflow-x-auto whitespace-nowrap pb-1 scrollbar-none"
                 title={viewingReminder?.title || ""}
               >
-                <h2 className="text-sm sm:text-base font-bold pr-6 text-white">
+                <h2 className="text-sm sm:text-base font-bold pr-6 text-gray-900 dark:text-white">
                   {viewingReminder?.title}
                 </h2>
               </div>
@@ -584,11 +584,11 @@ export default function RemindersPage({ params }: PageProps) {
             >
               <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
                 <div>
-                  <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-1 sm:mb-2">
+                  <h4 className="text-xs font-semibold text-gray-400 dark:text-zinc-400 uppercase tracking-wide mb-1 sm:mb-2">
                     Description
                   </h4>
-                  <div className="bg-zinc-800/50 rounded-md p-2 sm:p-3">
-                    <p className="whitespace-pre-wrap break-words text-xs text-zinc-300">
+                  <div className="bg-gray-200/50 dark:bg-zinc-800/50 rounded-md p-2 sm:p-3">
+                    <p className="whitespace-pre-wrap break-words text-xs text-gray-700 dark:text-zinc-300">
                       {viewingReminder?.description ||
                         "No description provided."}
                     </p>
@@ -597,24 +597,24 @@ export default function RemindersPage({ params }: PageProps) {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-1 sm:mb-2">
+                    <h4 className="text-xs font-semibold text-gray-400 dark:text-zinc-400 uppercase tracking-wide mb-1 sm:mb-2">
                       Due Date & Time
                     </h4>
-                    <div className="flex items-center bg-zinc-800/50 rounded-md p-2">
-                      <CalendarIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1.5 sm:mr-2 text-zinc-400" />
-                      <span className="text-xs font-medium text-zinc-300">
+                    <div className="flex items-center bg-gray-200/50 dark:bg-zinc-800/50 rounded-md p-2">
+                      <CalendarIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1.5 sm:mr-2 text-gray-400 dark:text-zinc-400" />
+                      <span className="text-xs font-medium text-gray-700 dark:text-zinc-300">
                         {viewingReminder && formatDate(viewingReminder.dueDate)}
                       </span>
                     </div>
                   </div>
 
                   <div>
-                    <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-1 sm:mb-2">
+                    <h4 className="text-xs font-semibold text-gray-400 dark:text-zinc-400 uppercase tracking-wide mb-1 sm:mb-2">
                       Created
                     </h4>
-                    <div className="flex items-center bg-zinc-800/50 rounded-md p-2">
-                      <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1.5 sm:mr-2 text-zinc-400" />
-                      <span className="text-xs font-medium text-zinc-300">
+                    <div className="flex items-center bg-gray-200/50 dark:bg-zinc-800/50 rounded-md p-2">
+                      <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1.5 sm:mr-2 text-gray-400 dark:text-zinc-400" />
+                      <span className="text-xs font-medium text-gray-700 dark:text-zinc-300">
                         {viewingReminder && viewingReminder.createdAt
                           ? formatDate(viewingReminder.createdAt)
                           : "Not available"}
@@ -624,11 +624,11 @@ export default function RemindersPage({ params }: PageProps) {
                 </div>
 
                 <div>
-                  <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-1 sm:mb-2">
+                  <h4 className="text-xs font-semibold text-gray-400 dark:text-zinc-400 uppercase tracking-wide mb-1 sm:mb-2">
                     Associated Prospect
                   </h4>
-                  <div className="bg-zinc-800/50 rounded-md p-2 flex items-center">
-                    <span className="text-xs font-medium text-zinc-300">
+                  <div className="bg-gray-200/50 dark:bg-zinc-800/50 rounded-md p-2 flex items-center">
+                    <span className="text-xs font-medium text-gray-700 dark:text-zinc-300">
                       ID: {id}
                     </span>
                   </div>
@@ -640,7 +640,7 @@ export default function RemindersPage({ params }: PageProps) {
             </div>
 
             {/* Footer - Fixed */}
-            <div className="border-t border-zinc-800 bg-zinc-800/30 p-2 sm:p-3 rounded-b-lg flex flex-wrap gap-2 sticky bottom-0 bg-zinc-900 z-10">
+            <div className="border-t border-gray-200 dark:border-zinc-800 bg-gray-200/30 dark:bg-zinc-800/30 p-2 sm:p-3 rounded-b-lg flex flex-wrap gap-2 sticky bottom-0 bg-gray-50 dark:bg-zinc-900 z-10">
               <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-start">
                 {viewingReminder?.status !== "completed" && (
                   <Button
@@ -652,7 +652,7 @@ export default function RemindersPage({ params }: PageProps) {
                         setIsViewModalOpen(false);
                       }
                     }}
-                    className="h-7 text-xs flex items-center gap-1.5 bg-zinc-800 hover:bg-green-900/20 border-green-800 text-green-400"
+                    className="h-7 text-xs flex items-center gap-1.5 bg-gray-200 dark:bg-zinc-800 hover:bg-green-200 dark:hover:bg-green-900/20 border-green-800 text-green-400"
                   >
                     <CheckCircle2 className="h-3 w-3" />
                     Mark Complete
@@ -668,7 +668,7 @@ export default function RemindersPage({ params }: PageProps) {
                       setDeleteDialogOpen(true);
                     }
                   }}
-                  className="h-7 text-xs flex items-center gap-1.5 bg-zinc-800 hover:bg-red-900/20 border-red-800 text-red-400"
+                  className="h-7 text-xs flex items-center gap-1.5 bg-gray-200 dark:bg-zinc-800 hover:bg-red-200 dark:hover:bg-red-900/20 border-red-800 text-red-400"
                 >
                   <Trash className="h-3 w-3" />
                   Delete

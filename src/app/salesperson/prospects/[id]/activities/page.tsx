@@ -320,10 +320,10 @@ export default function ActivitiesPage({ params }: PageProps) {
           {[1, 2, 3, 4].map((i) => (
             <Card
               key={i}
-              className="bg-zinc-900 border-zinc-800 overflow-hidden min-h-[180px] sm:min-h-[220px]"
+              className="bg-gray-50 dark:bg-zinc-900 border-gray-200 dark:border-zinc-800 overflow-hidden min-h-[180px] sm:min-h-[220px]"
             >
               <CardContent className="p-0 flex flex-col h-full">
-                <div className="p-3 sm:p-5 border-b border-zinc-800 flex-1">
+                <div className="p-3 sm:p-5 border-b border-gray-200 dark:border-zinc-800 flex-1">
                   <div className="flex items-start justify-between mb-2 sm:mb-3">
                     <div className="mr-2 flex-1">
                       <Skeleton className="h-5 w-32 sm:h-6 sm:w-40 mb-1" />
@@ -337,7 +337,7 @@ export default function ActivitiesPage({ params }: PageProps) {
                     <Skeleton className="h-4 w-28 sm:h-5 sm:w-32 mb-2" />
                   </div>
                 </div>
-                <div className="border-t border-zinc-800 p-2 sm:p-3 flex justify-end gap-1 sm:gap-2 bg-zinc-900/80">
+                <div className="border-t border-gray-200 dark:border-zinc-800 p-2 sm:p-3 flex justify-end gap-1 sm:gap-2 bg-gray-50/80 dark:bg-zinc-900/80">
                   <Skeleton className="h-7 w-7 sm:h-8 sm:w-8 rounded-full" />
                   <Skeleton className="h-7 w-7 sm:h-8 sm:w-8 rounded-full" />
                   <Skeleton className="h-7 w-7 sm:h-8 sm:w-8 rounded-full" />
@@ -352,15 +352,22 @@ export default function ActivitiesPage({ params }: PageProps) {
 
   if (error) {
     return (
-      <Alert variant="destructive" className="mx-auto max-w-2xl m-4 sm:m-6">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Error Loading Activities</AlertTitle>
-        <AlertDescription>{error}</AlertDescription>
+      <Alert
+        variant="destructive"
+        className="mx-auto max-w-2xl m-4 sm:m-6 bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800"
+      >
+        <AlertCircle className="h-4 w-4 text-red-500 dark:text-red-400" />
+        <AlertTitle className="text-gray-900 dark:text-white">
+          Error Loading Activities
+        </AlertTitle>
+        <AlertDescription className="text-gray-500 dark:text-zinc-400">
+          {error}
+        </AlertDescription>
         <Button
           variant="outline"
           size="sm"
           onClick={fetchActivities}
-          className="mt-2"
+          className="mt-2 bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-900 dark:text-zinc-200"
         >
           Try Again
         </Button>
@@ -369,17 +376,17 @@ export default function ActivitiesPage({ params }: PageProps) {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-2 sm:px-6 py-3 sm:py-8">
+    <div className="max-w-7xl mx-auto px-2 sm:px-6 py-3 sm:py-8 bg-white dark:bg-zinc-950">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="bg-zinc-800 p-1.5 sm:p-2 rounded-full">
-            <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-zinc-300" />
+          <div className="bg-gray-100 dark:bg-zinc-800 p-1.5 sm:p-2 rounded-full">
+            <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600 dark:text-zinc-300" />
           </div>
           <div>
-            <h1 className="text-lg sm:text-xl font-semibold tracking-tight">
+            <h1 className="text-lg sm:text-xl font-semibold tracking-tight text-gray-900 dark:text-white">
               Activities
             </h1>
-            <p className="text-muted-foreground text-xs sm:text-sm mt-0.5 sm:mt-1">
+            <p className="text-gray-500 dark:text-zinc-400 text-xs sm:text-sm mt-0.5 sm:mt-1">
               Manage activities for this prospect
             </p>
           </div>
@@ -387,7 +394,7 @@ export default function ActivitiesPage({ params }: PageProps) {
         <Button
           onClick={() => setIsModalOpen(true)}
           size="sm"
-          className="rounded-full gap-1.5 font-medium px-3 sm:px-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 w-full sm:w-auto"
+          className="rounded-full gap-1.5 font-medium px-3 sm:px-4 bg-gray-900 hover:bg-gray-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white dark:text-zinc-200 w-full sm:w-auto"
         >
           <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           Add Activity
@@ -402,7 +409,7 @@ export default function ActivitiesPage({ params }: PageProps) {
       >
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
           <div className="w-full sm:w-auto overflow-x-auto scrollbar-none pb-1 -mx-2 px-2">
-            <TabsList className="bg-zinc-900 border border-zinc-800 w-max sm:w-auto mb-2 sm:mb-0 flex-nowrap min-w-full">
+            <TabsList className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 w-max sm:w-auto mb-2 sm:mb-0 flex-nowrap min-w-full">
               <TabsTrigger
                 value="all"
                 className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
@@ -435,7 +442,7 @@ export default function ActivitiesPage({ params }: PageProps) {
               </TabsTrigger>
             </TabsList>
           </div>
-          <div className="text-xs sm:text-sm text-muted-foreground ml-auto sm:ml-0">
+          <div className="text-xs sm:text-sm text-gray-500 dark:text-zinc-400 ml-auto sm:ml-0">
             {filteredActivities.length}{" "}
             {filteredActivities.length === 1 ? "activity" : "activities"}
           </div>
@@ -443,14 +450,14 @@ export default function ActivitiesPage({ params }: PageProps) {
 
         <TabsContent value={activeTab} className="m-0">
           {filteredActivities.length === 0 ? (
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 flex flex-col items-center justify-center py-8 sm:py-12 px-3 sm:px-4">
-              <div className="bg-zinc-800 p-3 sm:p-4 rounded-full mb-3 sm:mb-4">
-                <Calendar className="h-8 w-8 sm:h-10 sm:w-10 text-zinc-400" />
+            <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900/50 flex flex-col items-center justify-center py-8 sm:py-12 px-3 sm:px-4">
+              <div className="bg-gray-100 dark:bg-zinc-800 p-3 sm:p-4 rounded-full mb-3 sm:mb-4">
+                <Calendar className="h-8 w-8 sm:h-10 sm:w-10 text-gray-400 dark:text-zinc-400" />
               </div>
-              <h3 className="text-base sm:text-lg font-medium mb-1 sm:mb-2">
+              <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100 mb-1 sm:mb-2">
                 No activities found
               </h3>
-              <p className="mb-4 sm:mb-6 text-xs sm:text-sm text-center text-zinc-400 max-w-md">
+              <p className="mb-4 sm:mb-6 text-xs sm:text-sm text-center text-gray-500 dark:text-zinc-400 max-w-md">
                 {activeTab === "all"
                   ? "You haven't created any activities yet. Add one to get started."
                   : `No ${activeTab
@@ -459,7 +466,7 @@ export default function ActivitiesPage({ params }: PageProps) {
               </p>
               <Button
                 onClick={() => setIsModalOpen(true)}
-                className="rounded-full gap-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs sm:text-sm"
+                className="rounded-full gap-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-900 dark:text-zinc-200 text-xs sm:text-sm"
                 size="sm"
               >
                 <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -471,13 +478,13 @@ export default function ActivitiesPage({ params }: PageProps) {
               {filteredActivities.map((activity) => (
                 <Card
                   key={activity._id}
-                  className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-colors overflow-hidden"
+                  className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700 transition-colors overflow-hidden"
                 >
                   <CardContent className="p-0 flex flex-col h-full">
-                    <div className="px-3 sm:px-5 pt-3 pb-3 sm:pb-5 border-b border-zinc-800 flex-1">
+                    <div className="px-3 sm:px-5 pt-3 pb-3 sm:pb-5 border-b border-gray-200 dark:border-zinc-800 flex-1 bg-gray-50/50 dark:bg-zinc-900/20">
                       <div className="flex items-start justify-between mb-2 sm:mb-3">
                         <div className="mr-2 flex-1">
-                          <h3 className="font-medium text-zinc-200 text-sm sm:text-base truncate max-w-[240px]">
+                          <h3 className="font-medium text-gray-900 dark:text-zinc-200 text-sm sm:text-base truncate max-w-[240px]">
                             {activity.title}
                           </h3>
                         </div>
@@ -490,22 +497,22 @@ export default function ActivitiesPage({ params }: PageProps) {
                         </div>
                       </div>
 
-                      <p className="text-zinc-400 text-xs sm:text-sm line-clamp-3 mb-3 sm:mb-4 min-h-[2.5rem] sm:min-h-[3rem]">
+                      <p className="text-gray-500 dark:text-zinc-400 text-xs sm:text-sm line-clamp-3 mb-3 sm:mb-4 min-h-[2.5rem] sm:min-h-[3rem]">
                         {activity.description || "No description provided."}
                       </p>
 
                       <div className="mt-auto space-y-1.5 sm:space-y-2">
                         <div className="flex items-center text-xs sm:text-sm">
-                          <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 flex-shrink-0 text-zinc-500" />
-                          <span className="truncate text-zinc-300 font-medium">
+                          <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 flex-shrink-0 text-gray-400 dark:text-zinc-500" />
+                          <span className="truncate text-gray-900 dark:text-zinc-300 font-medium">
                             {formatDate(activity.dueDate)}
                           </span>
                         </div>
 
                         {activity.completedDate && (
                           <div className="flex items-center text-xs sm:text-sm">
-                            <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 flex-shrink-0 text-green-400" />
-                            <span className="truncate text-zinc-300 font-medium">
+                            <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 flex-shrink-0 text-green-500 dark:text-green-400" />
+                            <span className="truncate text-gray-900 dark:text-zinc-300 font-medium">
                               {formatDate(activity.completedDate)}
                             </span>
                           </div>
@@ -513,10 +520,10 @@ export default function ActivitiesPage({ params }: PageProps) {
                       </div>
                     </div>
 
-                    <div className="border-t border-zinc-800 px-2 sm:px-3 py-2 sm:pt-3 flex justify-end gap-1.5 sm:gap-2 bg-zinc-900/80">
+                    <div className="border-t border-gray-200 dark:border-zinc-800 px-2 sm:px-3 py-2 sm:pt-3 flex justify-end gap-1.5 sm:gap-2 bg-white/80 dark:bg-zinc-900/80">
                       <button
                         onClick={() => openPreviewModal(activity)}
-                        className="p-1.5 sm:p-2 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors"
+                        className="p-1.5 sm:p-2 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 transition-colors"
                         title="View Details"
                       >
                         <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -524,7 +531,7 @@ export default function ActivitiesPage({ params }: PageProps) {
                       {activity.status !== ActivityStatus.COMPLETED && (
                         <button
                           onClick={() => handleMarkComplete(activity._id)}
-                          className="p-1.5 sm:p-2 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors"
+                          className="p-1.5 sm:p-2 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 transition-colors"
                           title="Mark as Complete"
                         >
                           <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -532,14 +539,14 @@ export default function ActivitiesPage({ params }: PageProps) {
                       )}
                       <button
                         onClick={() => handleEditClick(activity)}
-                        className="p-1.5 sm:p-2 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors"
+                        className="p-1.5 sm:p-2 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 transition-colors"
                         title="Edit Activity"
                       >
                         <Pencil className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </button>
                       <button
                         onClick={() => handleDeleteClick(activity._id)}
-                        className="p-1.5 sm:p-2 rounded-full bg-zinc-800 hover:bg-red-800/60 text-zinc-500 hover:text-red-300 transition-colors"
+                        className="p-1.5 sm:p-2 rounded-full bg-gray-100 hover:bg-red-100 dark:bg-red-800/60 text-gray-400 dark:text-zinc-500 hover:text-red-500 dark:hover:text-red-300 transition-colors"
                         title="Delete Activity"
                       >
                         <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -576,20 +583,27 @@ export default function ActivitiesPage({ params }: PageProps) {
         open={!!deleteActivityId}
         onOpenChange={() => setDeleteActivityId(null)}
       >
-        <AlertDialogContent className="sm:max-w-[425px]">
+        <AlertDialogContent className="sm:max-w-[425px] bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-gray-900 dark:text-white">
+              Are you sure?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-500 dark:text-zinc-400">
               This action cannot be undone. This will permanently delete the
               activity.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel
+              disabled={isDeleting}
+              className="bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-900 dark:text-zinc-200"
+            >
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-red-500 hover:bg-red-600 dark:bg-destructive dark:text-destructive-foreground dark:hover:bg-destructive/90"
             >
               {isDeleting ? (
                 <>
@@ -608,26 +622,26 @@ export default function ActivitiesPage({ params }: PageProps) {
       {previewActivity && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 overflow-hidden">
           <div
-            className="fixed inset-0 bg-black/70"
+            className="fixed inset-0 bg-gray-500/80 dark:bg-black/80"
             onClick={() => setPreviewActivity(null)}
           ></div>
 
-          <div className="relative bg-zinc-900 w-full max-w-[450px] rounded-lg shadow-xl border border-zinc-800 flex flex-col z-50 max-h-[90vh] sm:max-h-[550px]">
+          <div className="relative bg-white dark:bg-zinc-900 w-full max-w-[450px] rounded-lg shadow-xl border border-gray-200 dark:border-zinc-800 flex flex-col z-50 max-h-[90vh] sm:max-h-[550px]">
             {/* Close button */}
             <button
               onClick={() => setPreviewActivity(null)}
-              className="absolute right-2 sm:right-3 top-2 sm:top-3 text-zinc-400 hover:text-white z-10"
+              className="absolute right-2 sm:right-3 top-2 sm:top-3 text-gray-400 dark:text-zinc-400 hover:text-gray-600 dark:hover:text-white z-10"
             >
               <X className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
 
             {/* Header - Fixed */}
-            <div className="p-3 sm:p-5 border-b border-zinc-800 bg-zinc-900 sticky top-0 z-10">
+            <div className="p-3 sm:p-5 border-b border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900 sticky top-0 z-10">
               <div
                 className="overflow-x-auto whitespace-nowrap pb-1 sm:pb-2 scrollbar-none"
                 title={previewActivity?.title || ""}
               >
-                <h2 className="text-base sm:text-lg font-bold pr-6 text-white">
+                <h2 className="text-base sm:text-lg font-bold pr-6 text-gray-900 dark:text-white">
                   {previewActivity?.title}
                 </h2>
               </div>
@@ -642,7 +656,7 @@ export default function ActivitiesPage({ params }: PageProps) {
                 </Badge>
                 <Badge
                   variant="secondary"
-                  className="px-1.5 sm:px-2.5 py-0.5 text-xs sm:text-sm font-medium"
+                  className="px-1.5 sm:px-2.5 py-0.5 text-xs sm:text-sm font-medium bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-zinc-200"
                 >
                   {previewActivity?.type}
                 </Badge>
@@ -660,11 +674,11 @@ export default function ActivitiesPage({ params }: PageProps) {
             >
               <div className="p-3 sm:p-5 space-y-3 sm:space-y-5">
                 <div>
-                  <h4 className="text-xs sm:text-sm font-semibold text-zinc-400 uppercase tracking-wide mb-1 sm:mb-2">
+                  <h4 className="text-xs sm:text-sm font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wide mb-1 sm:mb-2">
                     Description
                   </h4>
-                  <div className="bg-zinc-800/50 rounded-md p-2 sm:p-4">
-                    <p className="whitespace-pre-wrap break-words text-xs sm:text-sm text-zinc-300">
+                  <div className="bg-gray-100 dark:bg-zinc-800/50 rounded-md p-2 sm:p-4">
+                    <p className="whitespace-pre-wrap break-words text-xs sm:text-sm text-gray-900 dark:text-zinc-300">
                       {previewActivity?.description ||
                         "No description provided."}
                     </p>
@@ -673,12 +687,12 @@ export default function ActivitiesPage({ params }: PageProps) {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <h4 className="text-xs sm:text-sm font-semibold text-zinc-400 uppercase tracking-wide mb-1 sm:mb-2">
+                    <h4 className="text-xs sm:text-sm font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wide mb-1 sm:mb-2">
                       Due Date
                     </h4>
-                    <div className="flex items-center bg-zinc-800/50 rounded-md p-2 sm:p-3">
-                      <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 text-zinc-400" />
-                      <span className="text-xs sm:text-sm font-medium text-zinc-300">
+                    <div className="flex items-center bg-gray-100 dark:bg-zinc-800/50 rounded-md p-2 sm:p-3">
+                      <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 text-gray-500 dark:text-zinc-400" />
+                      <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-zinc-300">
                         {previewActivity && formatDate(previewActivity.dueDate)}
                       </span>
                     </div>
@@ -686,12 +700,12 @@ export default function ActivitiesPage({ params }: PageProps) {
 
                   {previewActivity?.completedDate && (
                     <div>
-                      <h4 className="text-xs sm:text-sm font-semibold text-zinc-400 uppercase tracking-wide mb-1 sm:mb-2">
+                      <h4 className="text-xs sm:text-sm font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wide mb-1 sm:mb-2">
                         Completed Date
                       </h4>
-                      <div className="flex items-center bg-zinc-800/50 rounded-md p-2 sm:p-3">
-                        <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 text-zinc-400" />
-                        <span className="text-xs sm:text-sm font-medium text-zinc-300">
+                      <div className="flex items-center bg-gray-100 dark:bg-zinc-800/50 rounded-md p-2 sm:p-3">
+                        <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 text-green-500 dark:text-green-400" />
+                        <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-zinc-300">
                           {formatDate(previewActivity.completedDate)}
                         </span>
                       </div>
@@ -701,12 +715,12 @@ export default function ActivitiesPage({ params }: PageProps) {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <h4 className="text-xs sm:text-sm font-semibold text-zinc-400 uppercase tracking-wide mb-1 sm:mb-2">
+                    <h4 className="text-xs sm:text-sm font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wide mb-1 sm:mb-2">
                       Created
                     </h4>
-                    <div className="flex items-center bg-zinc-800/50 rounded-md p-2 sm:p-3">
-                      <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 text-zinc-400" />
-                      <span className="text-xs sm:text-sm font-medium text-zinc-300">
+                    <div className="flex items-center bg-gray-100 dark:bg-zinc-800/50 rounded-md p-2 sm:p-3">
+                      <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 text-gray-500 dark:text-zinc-400" />
+                      <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-zinc-300">
                         {previewActivity &&
                           formatDate(previewActivity.createdAt)}
                       </span>
@@ -715,12 +729,12 @@ export default function ActivitiesPage({ params }: PageProps) {
 
                   {previewActivity?.type && (
                     <div>
-                      <h4 className="text-xs sm:text-sm font-semibold text-zinc-400 uppercase tracking-wide mb-1 sm:mb-2">
+                      <h4 className="text-xs sm:text-sm font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wide mb-1 sm:mb-2">
                         Activity Type
                       </h4>
-                      <div className="flex items-center bg-zinc-800/50 rounded-md p-2 sm:p-3">
-                        <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 text-zinc-400" />
-                        <span className="text-xs sm:text-sm font-medium text-zinc-300">
+                      <div className="flex items-center bg-gray-100 dark:bg-zinc-800/50 rounded-md p-2 sm:p-3">
+                        <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 text-gray-500 dark:text-zinc-400" />
+                        <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-zinc-300">
                           {previewActivity.type}
                         </span>
                       </div>
@@ -729,11 +743,11 @@ export default function ActivitiesPage({ params }: PageProps) {
                 </div>
 
                 <div>
-                  <h4 className="text-xs sm:text-sm font-semibold text-zinc-400 uppercase tracking-wide mb-1 sm:mb-2">
+                  <h4 className="text-xs sm:text-sm font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wide mb-1 sm:mb-2">
                     Associated Prospect
                   </h4>
-                  <div className="bg-zinc-800/50 rounded-md p-2 sm:p-3 flex items-center">
-                    <span className="text-xs sm:text-sm font-medium text-zinc-300">
+                  <div className="bg-gray-100 dark:bg-zinc-800/50 rounded-md p-2 sm:p-3 flex items-center">
+                    <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-zinc-300">
                       ID: {id}
                     </span>
                   </div>
@@ -745,7 +759,7 @@ export default function ActivitiesPage({ params }: PageProps) {
             </div>
 
             {/* Footer - Fixed */}
-            <div className="border-t border-zinc-800 bg-zinc-800/30 p-2 sm:p-3 rounded-b-lg flex flex-wrap gap-2 sticky bottom-0 bg-zinc-900 z-10">
+            <div className="border-t border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/30 p-2 sm:p-3 rounded-b-lg flex flex-wrap gap-2 sticky bottom-0 bg-gray-50 dark:bg-zinc-900 z-10">
               <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-start">
                 {previewActivity?.status !== ActivityStatus.COMPLETED && (
                   <Button
@@ -757,7 +771,7 @@ export default function ActivitiesPage({ params }: PageProps) {
                         setPreviewActivity(null);
                       }
                     }}
-                    className="h-7 text-xs flex items-center gap-1.5 bg-zinc-800 hover:bg-green-900/20 border-green-800 text-green-400"
+                    className="h-7 text-xs flex items-center gap-1.5 bg-gray-100 hover:bg-green-100 dark:bg-green-900/20 border-green-500 dark:border-green-800 text-green-500 dark:text-green-400"
                   >
                     <CheckCircle2 className="h-3 w-3" />
                     Mark Complete
@@ -772,7 +786,7 @@ export default function ActivitiesPage({ params }: PageProps) {
                       setPreviewActivity(null);
                     }
                   }}
-                  className="h-7 text-xs flex items-center gap-1.5 bg-zinc-800 hover:bg-red-900/20 border-red-800 text-red-400"
+                  className="h-7 text-xs flex items-center gap-1.5 bg-gray-100 hover:bg-red-100 dark:bg-red-900/20 border-red-500 dark:border-red-800 text-red-500 dark:text-red-400"
                 >
                   <Trash2 className="h-3 w-3" />
                   Delete
@@ -788,7 +802,7 @@ export default function ActivitiesPage({ params }: PageProps) {
                       setPreviewActivity(null);
                     }
                   }}
-                  className="h-7 text-xs flex items-center gap-1.5"
+                  className="h-7 text-xs flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-900 dark:text-zinc-200"
                 >
                   <Pencil className="h-3 w-3" />
                   Edit
@@ -796,7 +810,7 @@ export default function ActivitiesPage({ params }: PageProps) {
                 <Button
                   size="sm"
                   onClick={() => setPreviewActivity(null)}
-                  className="h-7 text-xs"
+                  className="h-7 text-xs bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-900 dark:text-zinc-200"
                 >
                   Close
                 </Button>
