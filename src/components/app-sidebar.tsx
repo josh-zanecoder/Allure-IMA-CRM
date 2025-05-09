@@ -13,6 +13,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { useUserStore } from "@/store/useUserStore";
+import { usePaginationStore } from "@/store/usePaginationStore";
 import { useEffect, useState } from "react";
 import { SidebarData } from "@/types/sidebar";
 import { SidebarSkeleton } from "@/components/ui/sidebar-skeleton";
@@ -65,22 +66,38 @@ const defaultUser = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { userRole, students, userData, getUser } = useUserStore();
+  const { fetchProspects } = usePaginationStore();
   const [data, setData] = useState<SidebarData>({
     user: defaultUser,
     navMain: salesPersonNavItems || adminNavItems,
   });
   const [loading, setLoading] = useState(true);
 
+  // Fetch user data
   useEffect(() => {
+    setLoading(true);
     getUser();
+    setLoading(false);
   }, [getUser]);
 
+  // Fetch prospects for the sidebar when in salesperson role
+  useEffect(() => {
+    setLoading(true);
+    if (userRole === "salesperson") {
+      fetchProspects();
+    }
+    setLoading(false);
+  }, [userRole, fetchProspects]);
+
+  // Update sidebar data when user or students change
   useEffect(() => {
     if (!userData || !userRole || !students) {
       setLoading(false);
       return;
     }
+
     const updateSidebarData = async () => {
+      setLoading(true);
       try {
         const updatedUser = {
           name:

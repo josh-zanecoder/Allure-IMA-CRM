@@ -24,6 +24,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import axios from "axios";
+import { formatPhoneNumber } from "@/utils/formatters";
 
 interface SalesPerson {
   id: string;
@@ -267,14 +268,16 @@ export default function SalesPersonDetailPage() {
                 {salesperson.phone && (
                   <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4 text-primary" />
-                    <span className="text-sm">{salesperson.phone}</span>
+                    <span className="text-sm">
+                      Phone: {formatPhoneNumber(salesperson.phone)}
+                    </span>
                   </div>
                 )}
                 {salesperson.twilio_number && (
                   <div className="flex items-center gap-2">
                     <MessageSquare className="h-4 w-4 text-primary" />
                     <span className="text-sm flex-1">
-                      Twilio: {salesperson.twilio_number}
+                      Twilio: {formatPhoneNumber(salesperson.twilio_number)}
                     </span>
                   </div>
                 )}

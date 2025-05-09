@@ -55,6 +55,12 @@ export default function AdminProfilePage() {
     );
   }
 
+  function formatPhoneNumber(
+    twilio_phone_number: any
+  ): import("react").ReactNode {
+    throw new Error("Function not implemented.");
+  }
+
   return (
     <div className="space-y-6 p-6">
       <div className="flex flex-col space-y-1">
@@ -136,7 +142,9 @@ export default function AdminProfilePage() {
                           Phone
                         </dt>
                         <dd className="text-sm">
-                          {profileData?.phone || "Not available"}
+                          {profileData?.phone
+                            ? formatPhoneNumber(profileData?.phone)
+                            : "Not available"}
                         </dd>
                       </div>
                       <div className="flex items-center">
@@ -202,7 +210,7 @@ export default function AdminProfilePage() {
                         </dt>
                         <dd className="text-sm">
                           {profileData?.twilio_phone_number
-                            ? profileData.twilio_phone_number
+                            ? formatPhoneNumber(profileData.twilio_phone_number)
                             : "Not configured"}
                         </dd>
                       </div>

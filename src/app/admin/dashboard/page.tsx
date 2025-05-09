@@ -18,8 +18,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useUserStore } from "@/store/useUserStore";
-import axios from "axios";
-import InteractionRecord from "@/types/interaction";
+import { useCallLogStore } from "@/store/useCallLogStore";
 import { Button } from "@/components/ui/button";
 
 const getActivityIcon = (type: string) => {
@@ -43,36 +42,18 @@ const getActivityIcon = (type: string) => {
   }
 };
 
-const getInteractionIcon = (type: string) => {
-  switch (type) {
-    case "call":
-      return (
-        <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-foreground" />
-      );
-    case "email":
-      return (
-        <Mail className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-foreground" />
-      );
-    case "meeting":
-      return (
-        <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-foreground" />
-      );
-    case "note":
-      return (
-        <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-foreground" />
-      );
-    case "sms":
-      return (
-        <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-foreground" />
-      );
-    case "visit":
-      return (
-        <UserRound className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-foreground" />
-      );
-    default:
-      return (
-        <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-foreground" />
-      );
+const getCallDirectionIcon = (from: string, to: string) => {
+  // Simplified logic - could be enhanced based on your business rules
+  const isOutgoing = from.startsWith("+112"); // Assuming this is the company prefix
+
+  if (isOutgoing) {
+    return (
+      <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-foreground" />
+    );
+  } else {
+    return (
+      <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-foreground rotate-180" />
+    );
   }
 };
 
@@ -94,6 +75,18 @@ const getStatusColor = (status: string) => {
     default:
       return "bg-primary text-white dark:text-black";
   }
+};
+
+const formatPhoneNumber = (phoneNumber: string) => {
+  if (!phoneNumber) return "Unknown";
+
+  // Format phone number: +11234567890 -> +1 (123) 456-7890
+  const match = phoneNumber.match(/^\+(\d{1})(\d{3})(\d{3})(\d{4})$/);
+  if (match) {
+    return `+${match[1]} (${match[2]}) ${match[3]}-${match[4]}`;
+  }
+
+  return phoneNumber;
 };
 
 const ITEMS_PER_PAGE = 5;
@@ -174,62 +167,47 @@ const ContentSkeletonLoader = () => (
 export default function AdminDashboard() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const { activities, fetchAllActivities, isStoreLoading } = useUserStore();
-  const [interactions, setInteractions] = useState<InteractionRecord[]>([]);
-  const [isLoadingInteractions, setIsLoadingInteractions] = useState(true);
+  const {
+    callLogs,
+    fetchCallLogs,
+    isLoading: isLoadingCallLogs,
+    currentPage: callLogsPage,
+    totalPages: callLogsTotalPages,
+    totalCount,
+    setPage: setCallLogsPage,
+  } = useCallLogStore();
 
   // Pagination state
-  const [interactionPage, setInteractionPage] = useState(1);
   const [activityPage, setActivityPage] = useState(1);
 
   // Fetch data on mount only
   useEffect(() => {
     const controller = new AbortController();
 
-    // Fetch interaction records
-    const fetchInteractions = async () => {
-      setIsLoadingInteractions(true);
-      try {
-        const response = await axios.get("/api/interactions", {
-          signal: controller.signal,
-        });
-        if (response.data && response.data.interactions) {
-          setInteractions(response.data.interactions);
-        }
-      } catch (error) {
-        if (axios.isCancel(error)) {
-          // Request was cancelled, do nothing
-        } else {
-          console.error("Error fetching interactions:", error);
-        }
-      } finally {
-        setIsLoadingInteractions(false);
-      }
-    };
-
+    console.log("Fetching call logs and activities...");
     void fetchAllActivities();
-    void fetchInteractions();
+    void fetchCallLogs();
 
     // Cleanup function to abort fetch requests
     return () => {
       controller.abort();
     };
-  }, [fetchAllActivities]);
+  }, [fetchAllActivities, fetchCallLogs]);
+
+  // Refetch call logs when page changes
+  useEffect(() => {
+    console.log("Call logs page changed, refetching...", callLogsPage);
+    fetchCallLogs();
+  }, [callLogsPage, fetchCallLogs]);
+
+  // Debug call logs data
+  useEffect(() => {
+    console.log("Call logs data:", callLogs);
+    console.log("Call logs loading:", isLoadingCallLogs);
+    console.log("Call logs pages:", callLogsTotalPages);
+  }, [callLogs, isLoadingCallLogs, callLogsTotalPages]);
 
   // Memoize pagination calculations to avoid recalculation on each render
-  const paginatedInteractions = useMemo(() => {
-    const totalPages = Math.ceil(interactions.length / ITEMS_PER_PAGE);
-    const startIndex = (interactionPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, interactions.length);
-    const currentItems = interactions.slice(startIndex, endIndex);
-
-    return {
-      totalPages,
-      startIndex,
-      endIndex,
-      currentItems,
-    };
-  }, [interactions, interactionPage]);
-
   const paginatedActivities = useMemo(() => {
     const totalPages = Math.ceil(activities.length / ITEMS_PER_PAGE);
     const startIndex = (activityPage - 1) * ITEMS_PER_PAGE;
@@ -245,14 +223,12 @@ export default function AdminDashboard() {
   }, [activities, activityPage]);
 
   // Pagination handlers
-  const goToNextInteractionPage = () => {
-    setInteractionPage((prev) =>
-      Math.min(prev + 1, paginatedInteractions.totalPages)
-    );
+  const goToNextCallLogsPage = () => {
+    setCallLogsPage(callLogsPage + 1);
   };
 
-  const goToPrevInteractionPage = () => {
-    setInteractionPage((prev) => Math.max(prev - 1, 1));
+  const goToPrevCallLogsPage = () => {
+    setCallLogsPage(callLogsPage - 1);
   };
 
   const goToNextActivityPage = () => {
@@ -291,120 +267,97 @@ export default function AdminDashboard() {
 
       {/* Two column layout for cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        {/* Interaction Records */}
+        {/* Call Logs */}
         <Card className="h-full">
           <CardHeader>
             <CardTitle className="text-lg sm:text-xl">
-              Recent Interactions
+              Recent Call Logs
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoadingInteractions ? (
+            {isLoadingCallLogs ? (
               <ContentSkeletonLoader />
-            ) : interactions.length === 0 ? (
+            ) : callLogs.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-muted-foreground">
-                  No interaction records found
-                </p>
+                <p className="text-muted-foreground">No call logs found</p>
               </div>
             ) : (
               <>
                 <div className="space-y-6 sm:space-y-8">
-                  {paginatedInteractions.currentItems.map(
-                    (interaction, index) => (
-                      <div
-                        key={interaction._id || `interaction-${index}`}
-                        className="relative flex items-start gap-3 sm:gap-4"
-                      >
-                        <div className="relative">
-                          <div
-                            className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full ${getStatusColor(
-                              interaction.status || "default"
-                            )} flex items-center justify-center`}
-                          >
-                            {getInteractionIcon(
-                              interaction.interactionType || "default"
-                            )}
-                          </div>
-                          {index !==
-                            paginatedInteractions.currentItems.length - 1 && (
-                            <div className="absolute left-[13px] sm:left-[15px] top-7 sm:top-8 h-[calc(100%+32px)] w-[2px] bg-border" />
-                          )}
+                  {callLogs.map((callLog, index) => (
+                    <div
+                      key={callLog._id || `call-log-${index}`}
+                      className="relative flex items-start gap-3 sm:gap-4"
+                    >
+                      <div className="relative">
+                        <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-blue-500 text-white dark:text-black flex items-center justify-center">
+                          {getCallDirectionIcon(callLog.from, callLog.to)}
                         </div>
-                        <div className="flex-1 min-w-0 space-y-1">
-                          <p className="text-sm font-medium text-foreground">
-                            {interaction.subject || "No subject"}
-                          </p>
-                          <p className="text-xs text-muted-foreground break-words">
-                            {interaction.details || "No details"}
-                          </p>
-                          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                            <Clock className="h-3 w-3" />
-                            <time
-                              dateTime={
-                                interaction.createdAt ||
-                                new Date().toISOString()
-                              }
-                            >
-                              {interaction.createdAt
-                                ? format(
-                                    new Date(interaction.createdAt),
-                                    "MMM d, yyyy h:mm a"
-                                  )
-                                : "Unknown date"}
-                            </time>
-                            <span
-                              className={`px-2 py-0.5 rounded-full text-xs capitalize ${getStatusColor(
-                                interaction.status || "default"
-                              )} bg-opacity-10 text-foreground`}
-                            >
-                              {interaction.status
-                                ? interaction.status.replace("_", " ")
-                                : "Unknown"}
-                            </span>
-                            {interaction.extraData &&
-                              interaction.extraData.direction && (
-                                <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-800 capitalize">
-                                  {interaction.extraData.direction}
-                                </span>
-                              )}
-                          </div>
+                        {index !== callLogs.length - 1 && (
+                          <div className="absolute left-[13px] sm:left-[15px] top-7 sm:top-8 h-[calc(100%+32px)] w-[2px] bg-border" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <p className="text-sm font-medium text-foreground">
+                          {formatPhoneNumber(callLog.from)} →{" "}
+                          {formatPhoneNumber(callLog.to)}
+                        </p>
+                        <p className="text-xs text-muted-foreground break-words">
+                          {callLog.transcription ||
+                            "No transcription available"}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          <time dateTime={callLog.createdAt}>
+                            {format(
+                              new Date(callLog.createdAt),
+                              "MMM d, yyyy h:mm a"
+                            )}
+                          </time>
+                          <span className="px-2 py-0.5 rounded-full text-xs capitalize bg-blue-100 text-blue-800">
+                            {callLog.from.startsWith("+112")
+                              ? "Outgoing"
+                              : "Incoming"}
+                          </span>
                         </div>
                       </div>
-                    )
-                  )}
+                    </div>
+                  ))}
                 </div>
 
                 <div className="flex justify-between items-center mt-4">
                   <div className="text-sm text-muted-foreground">
-                    Showing{" "}
-                    {interactions.length === 0
-                      ? 0
-                      : paginatedInteractions.startIndex + 1}
-                    -{paginatedInteractions.endIndex} of {interactions.length}
+                    {callLogs.length === 0 ? (
+                      "No call logs to display"
+                    ) : (
+                      <>
+                        Showing {(callLogsPage - 1) * 5 + 1}-
+                        {Math.min(
+                          callLogsPage * 5,
+                          (callLogsPage - 1) * 5 + callLogs.length
+                        )}{" "}
+                        of {totalCount || callLogs.length}
+                      </>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={goToPrevInteractionPage}
-                      disabled={
-                        interactionPage === 1 || interactions.length === 0
-                      }
+                      onClick={goToPrevCallLogsPage}
+                      disabled={callLogsPage === 1 || isLoadingCallLogs}
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
                     <span className="text-sm py-2 px-1">
-                      Page {interactions.length === 0 ? 0 : interactionPage} of{" "}
-                      {paginatedInteractions.totalPages || 1}
+                      Page {callLogsPage} of {callLogsTotalPages || 1}
                     </span>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={goToNextInteractionPage}
+                      onClick={goToNextCallLogsPage}
                       disabled={
-                        interactionPage === paginatedInteractions.totalPages ||
-                        interactions.length === 0
+                        callLogsPage === callLogsTotalPages || isLoadingCallLogs
                       }
                     >
                       <ChevronRight className="h-4 w-4" />

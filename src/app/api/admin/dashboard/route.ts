@@ -10,8 +10,6 @@ export async function GET(request: Request) {
     // Attempt to get real data from database
     const activities = await activityService.getAll();
 
-    console.log("activities", activities);
-
     if (!activities) {
       console.log("No activities found, returning empty array");
       return NextResponse.json(

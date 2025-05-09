@@ -62,6 +62,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useUserStore } from "@/store/useUserStore";
+import { formatPhoneNumber } from "@/utils/formatters";
 import axios from "axios";
 import { toast } from "sonner";
 
@@ -321,7 +322,7 @@ export default function SalespersonsPage() {
                       <TableCell>
                         <div className="flex items-center gap-2 text-sm">
                           <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span>{person.phone}</span>
+                          <span>{formatPhoneNumber(person.phone)}</span>
                         </div>
                       </TableCell>
                       <TableCell>

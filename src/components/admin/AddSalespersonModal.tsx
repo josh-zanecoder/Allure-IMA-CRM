@@ -374,10 +374,11 @@ export default function AddSalespersonModal({
 
           <Alert>
             <AlertDescription>
-              New salespersons will receive a default password of{" "}
+              An email will be sent to the salesperson email with a{" "}
               <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm">
-                Default@123
+                Reset Password
               </code>
+              button and link to set their own password.
             </AlertDescription>
           </Alert>
 
