@@ -42,7 +42,7 @@ const adminNavItems = [
     isActive: (pathname: string) => pathname === "/admin/dashboard",
   },
   {
-    title: "Sales Team",
+    title: "Members",
     url: "/admin/salespersons",
     icon: Users,
     isActive: (pathname: string) => pathname.startsWith("/admin/salespersons"),
@@ -66,7 +66,7 @@ const defaultUser = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { userRole, students, userData, getUser } = useUserStore();
-  const { fetchProspects } = usePaginationStore();
+  const { fetchProspects, lastFetchStatus } = usePaginationStore();
   const [data, setData] = useState<SidebarData>({
     user: defaultUser,
     navMain: salesPersonNavItems || adminNavItems,
@@ -83,11 +83,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   // Fetch prospects for the sidebar when in salesperson role
   useEffect(() => {
     setLoading(true);
-    if (userRole === "salesperson") {
+    if (userRole === "salesperson" && lastFetchStatus !== "empty") {
       fetchProspects();
     }
     setLoading(false);
-  }, [userRole, fetchProspects]);
+  }, [userRole, fetchProspects, lastFetchStatus]);
 
   // Update sidebar data when user or students change
   useEffect(() => {

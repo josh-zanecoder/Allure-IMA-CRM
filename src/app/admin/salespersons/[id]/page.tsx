@@ -252,9 +252,9 @@ export default function SalesPersonDetailPage() {
                   )}
                   {salesperson.status || "Unknown"}
                 </Badge>
-                <p className="text-muted-foreground mt-1 flex items-center justify-center">
+                <p className="text-muted-foreground mt-1 flex items-center justify-center capitalize">
                   <Sparkles className="h-4 w-4 mr-2 text-primary" />
-                  {salesperson.role || "Salesperson"}
+                  {salesperson.role}
                 </p>
               </div>
 
@@ -401,8 +401,8 @@ export default function SalesPersonDetailPage() {
                     <div className="mt-4 pt-4 border-t border-primary/10 grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-xs text-muted-foreground">Role</p>
-                        <p className="text-sm font-medium">
-                          {salesperson.role || "Salesperson"}
+                        <p className="text-sm font-medium capitalize">
+                          {salesperson.role}
                         </p>
                       </div>
                       <div>

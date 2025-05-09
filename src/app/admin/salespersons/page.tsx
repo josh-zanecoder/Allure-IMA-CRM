@@ -202,8 +202,8 @@ export default function SalespersonsPage() {
   return (
     <div className="h-full space-y-6 p-8 pt-6">
       <div className="flex flex-col space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight">Sales Team</h1>
-        <p className="text-muted-foreground">Manage your sales team members</p>
+        <h1 className="text-3xl font-bold tracking-tight">Members</h1>
+        <p className="text-muted-foreground">Manage your team members</p>
       </div>
 
       <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -231,7 +231,7 @@ export default function SalespersonsPage() {
           className="w-full sm:w-auto whitespace-nowrap"
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Salesperson
+          Add Member
         </Button>
       </div>
 

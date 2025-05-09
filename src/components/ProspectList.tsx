@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { usePaginationStore } from "@/store/usePaginationStore";
 import { useCallStore } from "@/store/useCallStore";
@@ -66,6 +66,7 @@ export function ProspectList() {
     prospects,
     isLoading: isLoadingProspects,
     fetchProspects,
+    lastFetchStatus,
   } = usePaginationStore();
   const { makeCall, isCalling } = useCallStore();
   const [isDeleting, setIsDeleting] = useState(false);
@@ -88,7 +89,7 @@ export function ProspectList() {
 
   const handleSendEmail = (prospect: Prospect) => {
     const subject = `Regarding ${prospect.fullName}`;
-    const body = `Hello,\n\nI hope this email finds you well. I wanted to reach out regarding ${prospect.fullName}.\n\nBest regards,\n${prospect.assignedTo.email}`;
+    const body = `Hello,\n\nI hope this email finds you well. I wanted to reach out regarding ${prospect.fullName}.\n\nBest regards,\n${prospect.assignedTo?.email}`;
 
     const mailtoLink = `mailto:${prospect.email}?subject=${encodeURIComponent(
       subject
@@ -131,6 +132,14 @@ export function ProspectList() {
       setProspectToDelete(null);
     }
   };
+
+  // Prevent unnecessary API calls when no prospects are found
+  useEffect(() => {
+    // Only log the empty state once to avoid console spam
+    if (lastFetchStatus === "empty") {
+      console.log("No prospects found in the database");
+    }
+  }, [lastFetchStatus]);
 
   if (isLoadingProspects) {
     return (
@@ -273,7 +282,9 @@ export function ProspectList() {
                         </Badge>
                       </TableCell>
                       <TableCell className="hidden sm:table-cell text-right">
-                        {new Date(prospect.lastContact).toLocaleDateString()}
+                        {new Date(
+                          prospect.lastContact || ""
+                        ).toLocaleDateString()}
                       </TableCell>
                       <TableCell
                         className="w-8"
@@ -340,9 +351,11 @@ export function ProspectList() {
             {prospects.length === 0 && (
               <div className="flex flex-col items-center justify-center py-12">
                 <Search className="h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-semibold">No results found</h3>
+                <h3 className="mt-4 text-lg font-semibold">
+                  No prospects found
+                </h3>
                 <p className="text-sm text-muted-foreground">
-                  Try adjusting your search terms
+                  No prospects are currently available in the system
                 </p>
               </div>
             )}
@@ -402,12 +415,8 @@ export function ProspectList() {
                   <span>{formatAddress(prospect.address)}</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  <Globe className="h-4 w-4 text-muted-foreground" />
-                  <span>{prospect.dateOfBirth}</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs">
                   <User className="h-4 w-4 text-muted-foreground" />
-                  <span>Assigned to {prospect.assignedTo.email}</span>
+                  <span>Assigned to {prospect.assignedTo?.email}</span>
                 </div>
               </div>
 
@@ -443,6 +452,19 @@ export function ProspectList() {
             </CardContent>
           </Card>
         ))}
+        {prospects.length === 0 && (
+          <Card className="p-6">
+            <div className="flex flex-col items-center justify-center py-4">
+              <Search className="h-10 w-10 text-muted-foreground" />
+              <h3 className="mt-4 text-base font-semibold">
+                No prospects found
+              </h3>
+              <p className="text-xs text-center text-muted-foreground">
+                No prospects are currently available in the system
+              </p>
+            </div>
+          </Card>
+        )}
       </div>
 
       {/* Delete Confirmation Dialog */}

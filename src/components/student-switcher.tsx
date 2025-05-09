@@ -67,6 +67,7 @@ export function StudentSwitcher({
     totalPages,
     totalCount,
     setPage,
+    lastFetchStatus,
   } = usePaginationStore();
 
   // Local pagination state for non-prospects pages
@@ -101,17 +102,29 @@ export function StudentSwitcher({
 
   // Fetch prospects when the component mounts if we're on the prospects page
   useEffect(() => {
-    if (isProspectsPage && prospects.length === 0 && !isLoading) {
+    if (
+      isProspectsPage &&
+      prospects.length === 0 &&
+      !isLoading &&
+      lastFetchStatus !== "empty"
+    ) {
       fetchProspects();
     }
-  }, [pathname, prospects.length, fetchProspects, isLoading, isProspectsPage]);
+  }, [
+    pathname,
+    prospects.length,
+    fetchProspects,
+    isLoading,
+    isProspectsPage,
+    lastFetchStatus,
+  ]);
 
   // Refetch when page changes on prospects page
   useEffect(() => {
-    if (isProspectsPage) {
+    if (isProspectsPage && lastFetchStatus !== "empty") {
       fetchProspects();
     }
-  }, [currentPage, fetchProspects, isProspectsPage]);
+  }, [currentPage, fetchProspects, isProspectsPage, lastFetchStatus]);
 
   // Find active prospect and tab based on URL
   const { activeStudent, activeTab } = React.useMemo(() => {

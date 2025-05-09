@@ -38,6 +38,7 @@ import {
   PreferredContactMethod,
   Student,
   Gender,
+  CAMPUS,
 } from "@/types/prospect";
 import { ProspectSchema } from "@/lib/validation/student-schema";
 
@@ -58,18 +59,16 @@ const initialFormState: Omit<Student, "id"> = {
     state: "",
     zip: "",
   },
-  dateOfBirth: "",
-  educationLevel: EducationLevel.HIGH_SCHOOL,
+  educationLevel: 1, // Default to 1
+  campus: undefined,
   interests: [],
-  preferredContactMethod: PreferredContactMethod.EMAIL,
+  preferredContactMethod: PreferredContactMethod.CALL,
   notes: "",
   status: Status.New,
   fullName: "",
   lastContact: new Date().toISOString().split("T")[0],
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
-  gender: Gender.MALE,
-  genderOther: "",
   addedBy: {
     id: "",
     firstName: "",
@@ -178,16 +177,24 @@ export default function AddStudentModal({
       setFormData((prev) => ({
         ...prev,
         address: {
-          ...prev.address,
+          ...(prev.address || {}),
           [field]: value,
         },
       }));
       // Clear error when user types
       setErrors((prev) => ({ ...prev, [`address.${field}`]: "" }));
     } else {
+      // Handle empty campus value
+      let newValue;
+      if (name === "campus") {
+        newValue = value === "" ? undefined : value;
+      } else {
+        newValue = name === "educationLevel" ? Number(value) : value;
+      }
+
       setFormData((prev) => ({
         ...prev,
-        [name]: value,
+        [name]: newValue,
       }));
       // Clear error when user types
       setErrors((prev) => ({ ...prev, [name]: "" }));
@@ -197,9 +204,11 @@ export default function AddStudentModal({
   const handleInterestToggle = (interest: string) => {
     setFormData((prev) => ({
       ...prev,
-      interests: prev.interests.includes(interest)
-        ? prev.interests.filter((i) => i !== interest)
-        : [...prev.interests, interest],
+      interests: prev.interests
+        ? prev.interests.includes(interest)
+          ? prev.interests.filter((i) => i !== interest)
+          : [...prev.interests, interest]
+        : [interest],
     }));
   };
 
@@ -258,7 +267,7 @@ export default function AddStudentModal({
                 id="email"
                 name="email"
                 type="email"
-                value={formData.email}
+                value={formData.email || ""}
                 onChange={handleChange}
                 placeholder="student@example.com"
                 className={errors.email ? "border-destructive" : ""}
@@ -299,7 +308,7 @@ export default function AddStudentModal({
               <Input
                 id="address.street"
                 name="address.street"
-                value={formData.address.street}
+                value={formData.address?.street || ""}
                 onChange={handleChange}
                 placeholder="Enter street address"
                 className={errors["address.street"] ? "border-destructive" : ""}
@@ -316,7 +325,7 @@ export default function AddStudentModal({
               <Input
                 id="address.city"
                 name="address.city"
-                value={formData.address.city}
+                value={formData.address?.city || ""}
                 onChange={handleChange}
                 placeholder="Enter city"
                 className={errors["address.city"] ? "border-destructive" : ""}
@@ -333,7 +342,7 @@ export default function AddStudentModal({
               <Input
                 id="address.state"
                 name="address.state"
-                value={formData.address.state}
+                value={formData.address?.state || ""}
                 onChange={handleChange}
                 placeholder="Enter state"
                 className={errors["address.state"] ? "border-destructive" : ""}
@@ -350,9 +359,9 @@ export default function AddStudentModal({
               <Input
                 id="address.zip"
                 name="address.zip"
-                value={formData.address.zip}
+                value={formData.address?.zip || ""}
                 onChange={handleChange}
-                placeholder="Enter ZIP code"
+                placeholder="Enter ZIP code (optional)"
                 className={errors["address.zip"] ? "border-destructive" : ""}
               />
               {errors["address.zip"] && (
@@ -362,45 +371,56 @@ export default function AddStudentModal({
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="dateOfBirth">Date of Birth</Label>
-              <Input
-                id="dateOfBirth"
-                name="dateOfBirth"
-                type="date"
-                value={formData.dateOfBirth}
-                onChange={handleChange}
-                className={errors.dateOfBirth ? "border-destructive" : ""}
-              />
-              {errors.dateOfBirth && (
-                <p className="text-xs text-destructive">{errors.dateOfBirth}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="educationLevel">Education Level</Label>
-              <select
-                id="educationLevel"
-                name="educationLevel"
-                value={formData.educationLevel}
-                onChange={handleChange}
-                className={cn(
-                  "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-                  errors.educationLevel && "border-destructive"
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="educationLevel">Education Level (1-20)</Label>
+                <select
+                  id="educationLevel"
+                  name="educationLevel"
+                  value={formData.educationLevel || ""}
+                  onChange={handleChange}
+                  className={cn(
+                    "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+                    errors.educationLevel && "border-destructive"
+                  )}
+                >
+                  <option value="">Select education level</option>
+                  {Array.from({ length: 20 }, (_, i) => i + 1).map((level) => (
+                    <option key={level} value={level}>
+                      {level}
+                    </option>
+                  ))}
+                </select>
+                {errors.educationLevel && (
+                  <p className="text-xs text-destructive">
+                    {errors.educationLevel}
+                  </p>
                 )}
-              >
-                <option value="">Select education level</option>
-                {Object.values(EducationLevel).map((level) => (
-                  <option key={level} value={level}>
-                    {level}
-                  </option>
-                ))}
-              </select>
-              {errors.educationLevel && (
-                <p className="text-xs text-destructive">
-                  {errors.educationLevel}
-                </p>
-              )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="campus">Campus</Label>
+                <select
+                  id="campus"
+                  name="campus"
+                  value={formData.campus || ""}
+                  onChange={handleChange}
+                  className={cn(
+                    "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+                    errors.campus && "border-destructive"
+                  )}
+                >
+                  <option value="">Select campus</option>
+                  {Object.values(CAMPUS).map((campus) => (
+                    <option key={campus} value={campus}>
+                      {campus}
+                    </option>
+                  ))}
+                </select>
+                {errors.campus && (
+                  <p className="text-xs text-destructive">{errors.campus}</p>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -414,29 +434,34 @@ export default function AddStudentModal({
                     variant="outline"
                     role="combobox"
                     aria-expanded={isInterestsDropdownOpen}
-                    className="w-full justify-between"
+                    className="w-full justify-between text-base"
                   >
                     <span className="truncate">
-                      {formData.interests.length > 0
+                      {formData.interests && formData.interests.length > 0
                         ? formData.interests.join(", ")
                         : "Select interests..."}
                     </span>
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                <PopoverContent className="w-full p-0">
                   <Command>
-                    <CommandInput placeholder="Search interests..." />
+                    <CommandInput
+                      placeholder="Search interests..."
+                      className="text-base"
+                    />
                     <CommandEmpty>No interest found.</CommandEmpty>
                     <CommandGroup>
                       {Object.values(Interest).map((interest) => (
                         <CommandItem
                           key={interest}
                           onSelect={() => handleInterestToggle(interest)}
-                          className="flex items-center gap-2"
+                          className="flex items-center gap-3 text-base py-2"
                         >
                           <Checkbox
-                            checked={formData.interests.includes(interest)}
-                            className="h-4 w-4"
+                            checked={
+                              formData.interests?.includes(interest) || false
+                            }
+                            className="h-5 w-5"
                           />
                           {interest}
                         </CommandItem>
@@ -445,17 +470,17 @@ export default function AddStudentModal({
                   </Command>
                 </PopoverContent>
               </Popover>
-              {formData.interests.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2">
+              {formData.interests && formData.interests.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3">
                   {formData.interests.map((interest) => (
                     <Badge
                       key={interest}
                       variant="secondary"
-                      className="cursor-pointer"
+                      className="cursor-pointer text-base py-2 px-4"
                       onClick={() => handleInterestToggle(interest)}
                     >
                       {interest}
-                      <X className="ml-1 h-3 w-3" />
+                      <X className="ml-2 h-4 w-4" />
                     </Badge>
                   ))}
                 </div>
@@ -469,16 +494,20 @@ export default function AddStudentModal({
               <select
                 id="preferredContactMethod"
                 name="preferredContactMethod"
-                value={formData.preferredContactMethod}
+                value={
+                  formData.preferredContactMethod || PreferredContactMethod.CALL
+                }
                 onChange={handleChange}
                 className={cn(
                   "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
                   errors.preferredContactMethod && "border-destructive"
                 )}
               >
-                <option value="email">Email</option>
-                <option value="phone">Phone</option>
-                <option value="text">Text Message</option>
+                {Object.values(PreferredContactMethod).map((method) => (
+                  <option key={method} value={method}>
+                    {method}
+                  </option>
+                ))}
               </select>
               {errors.preferredContactMethod && (
                 <p className="text-xs text-destructive">
@@ -493,7 +522,7 @@ export default function AddStudentModal({
                 <Input
                   id="notes"
                   name="notes"
-                  value={formData.notes}
+                  value={formData.notes || ""}
                   onChange={handleChange}
                   placeholder="Additional notes about the student"
                   className={errors.notes ? "border-destructive" : ""}
@@ -508,7 +537,7 @@ export default function AddStudentModal({
                 <select
                   id="status"
                   name="status"
-                  value={formData.status}
+                  value={formData.status || Status.New}
                   onChange={handleChange}
                   className={cn(
                     "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",

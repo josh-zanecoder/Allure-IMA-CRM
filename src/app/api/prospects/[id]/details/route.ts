@@ -79,18 +79,15 @@ export async function PUT(
       );
     }
 
-    if (
-      !updatedData.address?.city ||
-      !updatedData.address?.state ||
-      !updatedData.address?.zip
-    ) {
+    // Validate zip only if provided
+    if (updatedData.address?.zip && !/^\d+$/.test(updatedData.address.zip)) {
       return NextResponse.json(
-        { error: "Address must include city, state, and zip" },
+        { error: "ZIP code must contain only numbers" },
         { status: 400 }
       );
     }
 
-    if (!emailRegex.test(updatedData.email)) {
+    if (updatedData.email && !emailRegex.test(updatedData.email)) {
       return NextResponse.json(
         { error: "Invalid email format" },
         { status: 400 }
@@ -106,18 +103,31 @@ export async function PUT(
       role: userData.role,
     };
 
-    const prospect = await Prospect.findByIdAndUpdate(
-      id,
-      {
-        ...updatedData,
-        fullName: `${updatedData.firstName} ${updatedData.lastName}`,
-        updatedBy: userInfo,
-        updatedAt: new Date(),
-      },
-      { new: true, runValidators: true }
-    );
-    console.log("PUT - Updated prospect:", prospect);
+    // Log the specific campus field before update
+    console.log("PUT - Campus before update:", updatedData.campus);
+    console.log("PUT - Campus type:", typeof updatedData.campus);
 
+    // Create the update object
+    const updatePayload = {
+      ...updatedData,
+      fullName: `${updatedData.firstName} ${updatedData.lastName}`,
+      updatedBy: userInfo,
+      updatedAt: new Date(),
+    };
+
+    // Explicitly handle campus field
+    if (updatedData.campus) {
+      updatePayload.campus = updatedData.campus;
+      console.log("PUT - Campus set in update payload:", updatePayload.campus);
+    }
+
+    console.log(
+      "PUT - Final update payload:",
+      JSON.stringify(updatePayload, null, 2)
+    );
+
+    // First find the prospect
+    const prospect = await Prospect.findById(id);
     if (!prospect) {
       return NextResponse.json(
         { error: "Prospect not found" },
@@ -125,11 +135,50 @@ export async function PUT(
       );
     }
 
-    return NextResponse.json({
-      ...prospect.toObject(),
-      id: prospect._id.toString(),
-      _id: undefined,
+    // Update all fields
+    Object.keys(updatePayload).forEach((key) => {
+      if (key !== "_id" && key !== "id") {
+        prospect[key] = updatePayload[key];
+      }
     });
+
+    // Explicitly set the campus field to ensure it gets saved
+    if (updatePayload.campus) {
+      prospect.set("campus", updatePayload.campus, { strict: false });
+      console.log("PUT - Manually set campus field:", prospect.get("campus"));
+    }
+
+    // Save the updated prospect
+    const savedProspect = await prospect.save();
+
+    console.log("PUT - Updated prospect:", savedProspect);
+    console.log(
+      "PUT - Campus in updated prospect:",
+      savedProspect.get("campus")
+    );
+
+    // Create response object
+    const responseObj = {
+      ...savedProspect.toObject(),
+      id: savedProspect._id.toString(),
+    };
+
+    // Remove the _id field to avoid duplicates
+    delete responseObj._id;
+
+    console.log("PUT - Response object:", JSON.stringify(responseObj, null, 2));
+    console.log("PUT - Campus in response:", responseObj.campus);
+
+    // If campus is lost in the process, add it back
+    if (!responseObj.campus && updatePayload.campus) {
+      console.log(
+        "PUT - Adding missing campus to response:",
+        updatePayload.campus
+      );
+      responseObj.campus = updatePayload.campus;
+    }
+
+    return NextResponse.json(responseObj);
   } catch (error) {
     console.log("PUT - Error details:", error);
     console.error("Error updating prospect:", error);

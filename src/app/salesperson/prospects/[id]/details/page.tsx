@@ -6,8 +6,8 @@ import {
   EducationLevel,
   Interest,
   Status,
-  Gender,
   PreferredContactMethod,
+  CAMPUS,
 } from "@/types/prospect";
 import { formatAddress, formatPhoneNumber } from "@/utils/formatters";
 import { useRouter } from "next/navigation";
@@ -90,6 +90,7 @@ export default function ProspectDetailsPage({ params }: PageProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedProspect, setEditedProspect] = useState<Prospect | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isInterestsOpen, setIsInterestsOpen] = useState(false);
 
   useEffect(() => {
     const loadProspect = async () => {
@@ -127,7 +128,10 @@ export default function ProspectDetailsPage({ params }: PageProps) {
     setEditedProspect(currentProspect);
   };
 
-  const handleChange = (field: string, value: string | string[] | boolean) => {
+  const handleChange = (
+    field: string,
+    value: string | string[] | boolean | number
+  ) => {
     if (!editedProspect) return;
 
     if (field === "interests") {
@@ -153,23 +157,6 @@ export default function ProspectDetailsPage({ params }: PageProps) {
         ...editedProspect,
         [field]: formattedPhone,
       });
-      return;
-    }
-
-    if (field === "gender") {
-      // Clear genderOther if gender is not "Other"
-      if (value !== Gender.OTHER) {
-        setEditedProspect({
-          ...editedProspect,
-          gender: value as Gender,
-          genderOther: "",
-        });
-      } else {
-        setEditedProspect({
-          ...editedProspect,
-          gender: value as Gender,
-        });
-      }
       return;
     }
 
@@ -219,6 +206,15 @@ export default function ProspectDetailsPage({ params }: PageProps) {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleInterestToggle = (interest: Interest) => {
+    if (!editedProspect) return;
+
+    const newInterests = editedProspect.interests?.includes(interest)
+      ? editedProspect.interests.filter((i) => i !== interest)
+      : [...(editedProspect.interests || []), interest];
+    handleChange("interests", newInterests);
   };
 
   if (isLoading) {
@@ -401,49 +397,6 @@ export default function ProspectDetailsPage({ params }: PageProps) {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm sm:text-base">Gender</Label>
-              {isEditing ? (
-                <div>
-                  <Select
-                    value={editedProspect.gender}
-                    onValueChange={(value) => handleChange("gender", value)}
-                  >
-                    <SelectTrigger className="text-sm sm:text-base">
-                      <SelectValue placeholder="Select gender" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.values(Gender).map((gender) => (
-                        <SelectItem key={gender} value={gender}>
-                          {gender}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {editedProspect.gender === Gender.OTHER && (
-                    <div className="mt-2">
-                      <Input
-                        value={editedProspect.genderOther || ""}
-                        onChange={(e) =>
-                          handleChange("genderOther", e.target.value)
-                        }
-                        placeholder="Please specify gender"
-                        className="text-sm sm:text-base"
-                      />
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <p className="text-sm sm:text-base text-foreground">
-                  {currentProspect.gender === Gender.OTHER
-                    ? `${currentProspect.gender} (${
-                        currentProspect.genderOther || "Not specified"
-                      })`
-                    : currentProspect.gender}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
               <Label className="text-sm sm:text-base">Phone</Label>
               {isEditing ? (
                 <div className="space-y-2">
@@ -531,49 +484,46 @@ export default function ProspectDetailsPage({ params }: PageProps) {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm sm:text-base">Interests</Label>
+              <Label className="text-sm sm:text-base">Program Interests</Label>
               {isEditing ? (
                 <div className="space-y-2">
-                  <Popover>
+                  <Popover
+                    open={isInterestsOpen}
+                    onOpenChange={setIsInterestsOpen}
+                  >
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         role="combobox"
-                        className="w-full justify-between"
+                        aria-expanded={isInterestsOpen}
+                        className="w-full justify-between text-sm sm:text-base"
                       >
                         <span className="truncate">
-                          {editedProspect.interests?.length > 0
-                            ? `Selected: ${editedProspect.interests.join(", ")}`
+                          {(editedProspect.interests || []).length > 0
+                            ? (editedProspect.interests || []).join(", ")
                             : "Select interests..."}
                         </span>
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-full p-0">
+                    <PopoverContent className="w-full sm:w-[525px] p-0">
                       <Command>
-                        <CommandInput placeholder="Search interests..." />
+                        <CommandInput
+                          placeholder="Search interests..."
+                          className="text-sm sm:text-base"
+                        />
                         <CommandEmpty>No interests found.</CommandEmpty>
                         <CommandGroup>
                           {Object.values(Interest).map((interest) => (
                             <CommandItem
                               key={interest}
-                              onSelect={() => {
-                                const newInterests =
-                                  editedProspect.interests?.includes(interest)
-                                    ? editedProspect.interests.filter(
-                                        (i) => i !== interest
-                                      )
-                                    : [
-                                        ...(editedProspect.interests || []),
-                                        interest,
-                                      ];
-                                handleChange("interests", newInterests);
-                              }}
+                              onSelect={() => handleInterestToggle(interest)}
+                              className="flex items-center gap-3 text-sm sm:text-base py-2"
                             >
                               <Checkbox
-                                checked={editedProspect.interests?.includes(
-                                  interest
-                                )}
-                                className="mr-2 h-4 w-4"
+                                checked={(
+                                  editedProspect.interests || []
+                                ).includes(interest)}
+                                className="h-4 w-4 sm:h-5 sm:w-5"
                               />
                               {interest}
                             </CommandItem>
@@ -583,35 +533,36 @@ export default function ProspectDetailsPage({ params }: PageProps) {
                     </PopoverContent>
                   </Popover>
 
-                  {editedProspect.interests.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {editedProspect.interests.map((interest, index) => (
-                        <Badge
-                          key={index}
-                          variant="secondary"
-                          className="cursor-pointer flex items-center gap-1"
-                          onClick={() => {
-                            const newInterests =
-                              editedProspect.interests.filter(
-                                (i) => i !== interest
-                              );
-                            handleChange("interests", newInterests);
-                          }}
-                        >
-                          {interest}
-                          <X className="h-3 w-3" />
-                        </Badge>
-                      ))}
+                  {(editedProspect.interests || []).length > 0 && (
+                    <div className="flex flex-wrap gap-3">
+                      {(editedProspect.interests || []).map(
+                        (interest, index) => (
+                          <Badge
+                            key={index}
+                            variant="secondary"
+                            className="cursor-pointer flex items-center gap-1 text-sm sm:text-base py-1.5 px-3"
+                            onClick={() => {
+                              const newInterests = (
+                                editedProspect.interests || []
+                              ).filter((i) => i !== interest);
+                              handleChange("interests", newInterests);
+                            }}
+                          >
+                            {interest}
+                            <X className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
+                          </Badge>
+                        )
+                      )}
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-3">
                   {(currentProspect.interests || []).map((interest, index) => (
                     <Badge
                       key={index}
                       variant="secondary"
-                      className="text-xs sm:text-sm"
+                      className="text-sm sm:text-base py-1.5 px-3"
                     >
                       {interest}
                     </Badge>
@@ -639,7 +590,7 @@ export default function ProspectDetailsPage({ params }: PageProps) {
                 <div className="space-y-3">
                   <Input
                     placeholder="Street"
-                    value={editedProspect.address.street}
+                    value={editedProspect.address?.street || ""}
                     onChange={(e) =>
                       handleChange("address.street", e.target.value)
                     }
@@ -648,7 +599,7 @@ export default function ProspectDetailsPage({ params }: PageProps) {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Input
                       placeholder="City"
-                      value={editedProspect.address.city}
+                      value={editedProspect.address?.city || ""}
                       onChange={(e) =>
                         handleChange("address.city", e.target.value)
                       }
@@ -656,7 +607,7 @@ export default function ProspectDetailsPage({ params }: PageProps) {
                     />
                     <Input
                       placeholder="State"
-                      value={editedProspect.address.state}
+                      value={editedProspect.address?.state || ""}
                       onChange={(e) =>
                         handleChange("address.state", e.target.value)
                       }
@@ -665,7 +616,7 @@ export default function ProspectDetailsPage({ params }: PageProps) {
                   </div>
                   <Input
                     placeholder="ZIP Code"
-                    value={editedProspect.address.zip}
+                    value={editedProspect.address?.zip || ""}
                     onChange={(e) =>
                       handleChange("address.zip", e.target.value)
                     }
@@ -716,20 +667,22 @@ export default function ProspectDetailsPage({ params }: PageProps) {
               <Label className="text-sm sm:text-base">Education Level</Label>
               {isEditing ? (
                 <Select
-                  value={editedProspect.educationLevel}
+                  value={String(editedProspect.educationLevel)}
                   onValueChange={(value) =>
-                    handleChange("educationLevel", value)
+                    handleChange("educationLevel", Number(value))
                   }
                 >
                   <SelectTrigger className="text-sm sm:text-base">
                     <SelectValue placeholder="Select education level" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.values(EducationLevel).map((level) => (
-                      <SelectItem key={level} value={level}>
-                        {level}
-                      </SelectItem>
-                    ))}
+                    {Array.from({ length: 20 }, (_, i) => i + 1).map(
+                      (level) => (
+                        <SelectItem key={level} value={String(level)}>
+                          {level}
+                        </SelectItem>
+                      )
+                    )}
                   </SelectContent>
                 </Select>
               ) : (
@@ -741,33 +694,39 @@ export default function ProspectDetailsPage({ params }: PageProps) {
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm sm:text-base">Date of Birth</Label>
-                {isEditing ? (
-                  <Input
-                    type="date"
-                    value={formatDateForInput(editedProspect.dateOfBirth)}
-                    onChange={(e) =>
-                      handleChange("dateOfBirth", e.target.value)
-                    }
-                    className="text-sm sm:text-base w-auto"
-                  />
-                ) : (
-                  <div className="flex items-center">
-                    <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground mr-2" />
-                    <span className="text-sm sm:text-base text-foreground">
-                      {formatDateForDisplay(currentProspect.dateOfBirth)}
-                    </span>
-                  </div>
-                )}
-              </div>
+            <div className="space-y-2">
+              <Label className="text-sm sm:text-base">Campus</Label>
+              {isEditing ? (
+                <Select
+                  value={editedProspect.campus}
+                  onValueChange={(value) => handleChange("campus", value)}
+                >
+                  <SelectTrigger className="text-sm sm:text-base">
+                    <SelectValue placeholder="Select campus" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.values(CAMPUS).map((campus) => (
+                      <SelectItem key={campus} value={campus}>
+                        {campus}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="flex items-center">
+                  <Badge variant="secondary" className="text-xs sm:text-sm">
+                    {currentProspect.campus || "Not specified"}
+                  </Badge>
+                </div>
+              )}
+            </div>
 
+            <div className="grid grid-cols-1 sm:grid-cols-1 gap-4">
               <div className="space-y-2">
                 <Label className="text-sm sm:text-base">Notes</Label>
                 {isEditing ? (
                   <Input
-                    value={editedProspect.notes}
+                    value={editedProspect.notes || ""}
                     onChange={(e) => handleChange("notes", e.target.value)}
                     placeholder="Add notes..."
                     className="text-sm sm:text-base"

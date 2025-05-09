@@ -42,7 +42,6 @@ export default function AddSalespersonModal({
     password: "Default@123",
     role: "salesperson",
     status: "active",
-    twilio_number: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -63,7 +62,6 @@ export default function AddSalespersonModal({
       password: "Default@123",
       role: "salesperson",
       status: "active",
-      twilio_number: "",
     });
     setErrors({});
     setApiError(null);
@@ -71,7 +69,7 @@ export default function AddSalespersonModal({
 
   const handlePhoneChange = (
     e: React.ChangeEvent<HTMLInputElement>,
-    field: "phone" | "twilio_number"
+    field: "phone"
   ) => {
     const { value } = e.target;
     const formattedValue = formatPhoneNumber(value);
@@ -91,8 +89,8 @@ export default function AddSalespersonModal({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    if (name === "phone" || name === "twilio_number") {
-      handlePhoneChange(e, name as "phone" | "twilio_number");
+    if (name === "phone") {
+      handlePhoneChange(e, name as "phone");
       return;
     }
 
@@ -138,17 +136,6 @@ export default function AddSalespersonModal({
         return false;
       }
 
-      // Check twilio number if it's not empty
-      if (formData.twilio_number && formData.twilio_number.length > 0) {
-        if (!isValidPhoneNumber(formData.twilio_number)) {
-          setErrors({
-            twilio_number:
-              "Please enter a valid phone number in format (XXX) XXX-XXXX",
-          });
-          return false;
-        }
-      }
-
       // Validate the data with the schema
       CreateSalespersonInputSchema.parse(formData);
       setErrors({});
@@ -175,15 +162,12 @@ export default function AddSalespersonModal({
     if (!validateForm()) return;
 
     setIsSubmitting(true);
-    const loadingToast = toast.loading("Creating new salesperson...");
+    const loadingToast = toast.loading("Creating new member...");
 
     try {
       const response = await axios.post("/api/admin-salespersons/create", {
         ...formData,
         phone: unformatPhoneNumber(formData.phone),
-        twilio_number: formData.twilio_number
-          ? unformatPhoneNumber(formData.twilio_number)
-          : null,
       });
 
       console.log("response", response);
@@ -198,14 +182,14 @@ export default function AddSalespersonModal({
         onSalespersonAdded();
       }
 
-      toast.success("Salesperson created successfully!", {
+      toast.success("Member created successfully!", {
         id: loadingToast,
       });
       onClose();
     } catch (error) {
-      console.error("Error creating salesperson:", error);
+      console.error("Error creating member:", error);
 
-      let errorMessage = "Failed to create salesperson";
+      let errorMessage = "Failed to create member";
       if (axios.isAxiosError(error) && error.response?.data?.error) {
         errorMessage = error.response.data.error;
       } else if (error instanceof Error) {
@@ -229,7 +213,7 @@ export default function AddSalespersonModal({
       console.error("Error sending password setup email:", error);
 
       let errorMessage =
-        "Failed to send password setup email. The salesperson was created but will need to be sent a setup link manually.";
+        "Failed to send password setup email. The member was created but will need to be sent a setup link manually.";
       if (axios.isAxiosError(error) && error.response?.data?.error) {
         errorMessage = error.response.data.error;
       } else if (error instanceof Error) {
@@ -244,10 +228,10 @@ export default function AddSalespersonModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
-          <DialogTitle>Add New Salesperson</DialogTitle>
+          <DialogTitle>Add New Member</DialogTitle>
           <DialogDescription>
-            Add a new member to your sales team. They'll receive login
-            credentials via email.
+            Add a new member to your team. They'll receive login credentials via
+            email.
           </DialogDescription>
         </DialogHeader>
 
@@ -333,48 +317,9 @@ export default function AddSalespersonModal({
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="twilio_number">
-              Twilio Number
-              <span className="text-xs text-muted-foreground ml-2">
-                (Optional)
-              </span>
-            </Label>
-            <Input
-              id="twilio_number"
-              name="twilio_number"
-              type="tel"
-              value={formData.twilio_number}
-              onChange={handleChange}
-              placeholder="(555) 123-4567"
-              maxLength={14}
-              className={cn(
-                "border-input",
-                (errors.twilio_number ||
-                  (formData.twilio_number &&
-                    formData.twilio_number.length > 0 &&
-                    !isValidPhoneNumber(formData.twilio_number))) &&
-                  "border-destructive"
-              )}
-            />
-            {errors.twilio_number ? (
-              <p className="text-xs text-destructive">{errors.twilio_number}</p>
-            ) : formData.twilio_number &&
-              formData.twilio_number.length > 0 &&
-              !isValidPhoneNumber(formData.twilio_number) ? (
-              <p className="text-xs text-destructive">
-                Please enter a valid phone number in format (XXX) XXX-XXXX
-              </p>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                Enter in format (XXX) XXX-XXXX
-              </p>
-            )}
-          </div>
-
           <Alert>
             <AlertDescription>
-              An email will be sent to the salesperson email with a{" "}
+              An email will be sent to the member's email with a{" "}
               <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm">
                 Reset Password
               </code>
@@ -393,7 +338,7 @@ export default function AddSalespersonModal({
                   Adding...
                 </>
               ) : (
-                "Add Salesperson"
+                "Add Member"
               )}
             </Button>
           </div>

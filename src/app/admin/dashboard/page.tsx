@@ -257,10 +257,10 @@ export default function AdminDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            Sales Team Management
+            Team Member Management
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
-            Monitor and manage your sales team
+            Monitor and manage your team members
           </p>
         </div>
       </div>
