@@ -319,15 +319,20 @@ export default function RemindersPage({ params }: PageProps) {
   }
 
   return (
-    <div className="container mx-auto py-6 px-4">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+    <div className="container mx-auto py-4 sm:py-6 px-2 sm:px-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-4 sm:mb-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Reminders</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
+            Reminders
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             Manage reminders for this prospect
           </p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)}>
+        <Button
+          onClick={() => setIsModalOpen(true)}
+          className="w-full md:w-auto"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Add Reminder
         </Button>
@@ -339,22 +344,36 @@ export default function RemindersPage({ params }: PageProps) {
         value={activeTab}
         onValueChange={setActiveTab}
       >
-        <div className="flex justify-between items-center">
-          <TabsList className="bg-zinc-900 border border-zinc-800">
-            <TabsTrigger value="all" className="text-sm">
-              All
-            </TabsTrigger>
-            <TabsTrigger value="pending" className="text-sm">
-              Pending
-            </TabsTrigger>
-            <TabsTrigger value="completed" className="text-sm">
-              Completed
-            </TabsTrigger>
-            <TabsTrigger value="overdue" className="text-sm">
-              Overdue
-            </TabsTrigger>
-          </TabsList>
-          <div className="text-sm text-muted-foreground">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
+          <div className="w-full sm:w-auto overflow-x-auto scrollbar-none pb-1 -mx-2 px-2">
+            <TabsList className="bg-zinc-900 border border-zinc-800 w-max sm:w-auto mb-2 sm:mb-0 flex-nowrap min-w-full">
+              <TabsTrigger
+                value="all"
+                className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
+              >
+                All
+              </TabsTrigger>
+              <TabsTrigger
+                value="pending"
+                className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
+              >
+                Pending
+              </TabsTrigger>
+              <TabsTrigger
+                value="completed"
+                className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
+              >
+                Completed
+              </TabsTrigger>
+              <TabsTrigger
+                value="overdue"
+                className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
+              >
+                Overdue
+              </TabsTrigger>
+            </TabsList>
+          </div>
+          <div className="text-xs sm:text-sm text-muted-foreground ml-auto sm:ml-0">
             {filteredReminders.length} reminder
             {filteredReminders.length !== 1 ? "s" : ""}
           </div>
@@ -362,12 +381,12 @@ export default function RemindersPage({ params }: PageProps) {
 
         <TabsContent value={activeTab} className="m-0">
           {filteredReminders.length === 0 ? (
-            <div className="flex flex-col items-center justify-center bg-zinc-900/50 border border-zinc-800 rounded-lg p-8 mt-4">
-              <CalendarIcon className="h-12 w-12 text-zinc-600 mb-3" />
-              <h3 className="text-lg font-medium text-zinc-300">
+            <div className="flex flex-col items-center justify-center bg-zinc-900/50 border border-zinc-800 rounded-lg p-4 sm:p-8 mt-2 sm:mt-4">
+              <CalendarIcon className="h-10 w-10 sm:h-12 sm:w-12 text-zinc-600 mb-2 sm:mb-3" />
+              <h3 className="text-base sm:text-lg font-medium text-zinc-300">
                 No Reminders
               </h3>
-              <p className="text-zinc-500 text-center mt-1 max-w-sm">
+              <p className="text-zinc-500 text-xs sm:text-sm text-center mt-1 max-w-sm">
                 {activeTab === "all"
                   ? "You haven't created any reminders yet. Add one to get started."
                   : `No ${activeTab} reminders found.`}
@@ -375,29 +394,30 @@ export default function RemindersPage({ params }: PageProps) {
               <Button
                 onClick={() => setIsModalOpen(true)}
                 variant="outline"
-                className="mt-4"
+                className="mt-3 sm:mt-4 text-xs sm:text-sm"
+                size="sm"
               >
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 Add Reminder
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mt-2 sm:mt-4">
               {filteredReminders.map((reminder) => (
                 <Card
                   key={reminder._id}
                   className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-colors overflow-hidden"
                 >
                   <CardContent className="p-0 flex flex-col h-full">
-                    <div className="p-4 border-b border-zinc-800 flex-1">
+                    <div className="p-3 sm:p-4 border-b border-zinc-800 flex-1">
                       <div className="flex items-start justify-between mb-2">
                         <div className="mr-2 flex-1">
-                          <h3 className="font-medium text-zinc-200 truncate max-w-[200px]">
+                          <h3 className="font-medium text-sm sm:text-base text-zinc-200 truncate max-w-[200px]">
                             {reminder.title}
                           </h3>
                         </div>
                         <div
-                          className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${getStatusColor(
+                          className={`px-1.5 sm:px-2 py-0.5 rounded-full text-xs font-medium capitalize ${getStatusColor(
                             reminder.status
                           )} flex-shrink-0 whitespace-nowrap`}
                         >
@@ -405,51 +425,51 @@ export default function RemindersPage({ params }: PageProps) {
                         </div>
                       </div>
 
-                      <p className="text-zinc-400 text-sm line-clamp-2 mb-3">
+                      <p className="text-zinc-400 text-xs sm:text-sm line-clamp-2 mb-2 sm:mb-3">
                         {reminder.description}
                       </p>
 
-                      <div className="flex items-center gap-2 mt-auto text-sm">
-                        <Clock className="h-3.5 w-3.5 text-zinc-500" />
-                        <span className="text-zinc-300">
+                      <div className="flex items-center gap-1 sm:gap-2 mt-auto text-xs sm:text-sm">
+                        <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-zinc-500" />
+                        <span className="text-zinc-300 truncate">
                           {formatDate(reminder.dueDate)}
                         </span>
                       </div>
                     </div>
 
-                    <div className="border-t border-zinc-800 p-2 flex justify-end gap-1.5 bg-zinc-900/80">
+                    <div className="border-t border-zinc-800 p-1.5 sm:p-2 flex justify-end gap-1 sm:gap-1.5 bg-zinc-900/80">
                       <button
                         onClick={() => handleViewReminder(reminder)}
-                        className="p-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors"
+                        className="p-1 sm:p-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors"
                         title="View Details"
                       >
-                        <Eye className="h-3.5 w-3.5" />
+                        <Eye className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                       </button>
                       {reminder.status !== "completed" && (
                         <button
                           onClick={() => handleMarkComplete(reminder._id)}
-                          className="p-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors"
+                          className="p-1 sm:p-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors"
                           title="Mark as Complete"
                         >
-                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          <CheckCircle2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                         </button>
                       )}
                       <button
                         onClick={() => handleEditReminder(reminder)}
-                        className="p-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors"
+                        className="p-1 sm:p-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors"
                         title="Edit Reminder"
                       >
-                        <Pencil className="h-3.5 w-3.5" />
+                        <Pencil className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                       </button>
                       <button
                         onClick={() => {
                           setDeletingReminderId(reminder._id);
                           setDeleteDialogOpen(true);
                         }}
-                        className="p-1.5 rounded-full bg-zinc-800 hover:bg-red-800/60 text-zinc-500 hover:text-red-300 transition-colors"
+                        className="p-1 sm:p-1.5 rounded-full bg-zinc-800 hover:bg-red-800/60 text-zinc-500 hover:text-red-300 transition-colors"
                         title="Delete Reminder"
                       >
-                        <Trash className="h-3.5 w-3.5" />
+                        <Trash className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                       </button>
                     </div>
                   </CardContent>
@@ -507,45 +527,45 @@ export default function RemindersPage({ params }: PageProps) {
       </Dialog>
 
       {isViewModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 overflow-hidden">
           <div
             className="fixed inset-0 bg-black/70"
             onClick={() => setIsViewModalOpen(false)}
           ></div>
 
-          <div className="relative bg-zinc-900 w-[450px] rounded-lg shadow-xl border border-zinc-800 flex flex-col z-50 max-h-[550px]">
+          <div className="relative bg-zinc-900 w-full max-w-[450px] rounded-lg shadow-xl border border-zinc-800 flex flex-col z-50 max-h-[90vh] sm:max-h-[550px]">
             {/* Close button */}
             <button
               onClick={() => setIsViewModalOpen(false)}
-              className="absolute right-3 top-3 text-zinc-400 hover:text-white z-10"
+              className="absolute right-2 sm:right-3 top-2 sm:top-3 text-zinc-400 hover:text-white z-10"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
 
             {/* Header - Fixed */}
-            <div className="p-4 border-b border-zinc-800 bg-zinc-900 sticky top-0 z-10">
+            <div className="p-3 sm:p-4 border-b border-zinc-800 bg-zinc-900 sticky top-0 z-10">
               <div
                 className="overflow-x-auto whitespace-nowrap pb-1 scrollbar-none"
                 title={viewingReminder?.title || ""}
               >
-                <h2 className="text-base font-bold pr-6 text-white">
+                <h2 className="text-sm sm:text-base font-bold pr-6 text-white">
                   {viewingReminder?.title}
                 </h2>
               </div>
-              <div className="mt-1.5 flex items-center space-x-2">
+              <div className="mt-1 sm:mt-1.5 flex items-center space-x-2">
                 <Badge
                   variant="outline"
                   className={`${
                     viewingReminder?.status &&
                     getStatusColor(viewingReminder.status)
-                  } px-2 py-0.5 text-xs font-medium`}
+                  } px-1.5 sm:px-2 py-0.5 text-xs font-medium`}
                 >
                   {viewingReminder?.status}
                 </Badge>
                 {viewingReminder?.type && (
                   <Badge
                     variant="secondary"
-                    className="px-2 py-0.5 text-xs font-medium"
+                    className="px-1.5 sm:px-2 py-0.5 text-xs font-medium"
                   >
                     {viewingReminder.type}
                   </Badge>
@@ -554,13 +574,20 @@ export default function RemindersPage({ params }: PageProps) {
             </div>
 
             {/* Body - Scrollable */}
-            <div className="overflow-y-auto" style={{ height: "300px" }}>
-              <div className="p-4 space-y-4">
+            <div
+              className="overflow-y-auto"
+              style={{
+                height: "auto",
+                maxHeight: "calc(90vh - 160px)",
+                minHeight: "200px",
+              }}
+            >
+              <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
                 <div>
-                  <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-2">
+                  <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-1 sm:mb-2">
                     Description
                   </h4>
-                  <div className="bg-zinc-800/50 rounded-md p-3">
+                  <div className="bg-zinc-800/50 rounded-md p-2 sm:p-3">
                     <p className="whitespace-pre-wrap break-words text-xs text-zinc-300">
                       {viewingReminder?.description ||
                         "No description provided."}
@@ -568,13 +595,13 @@ export default function RemindersPage({ params }: PageProps) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-2">
+                    <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-1 sm:mb-2">
                       Due Date & Time
                     </h4>
                     <div className="flex items-center bg-zinc-800/50 rounded-md p-2">
-                      <CalendarIcon className="h-3.5 w-3.5 mr-2 text-zinc-400" />
+                      <CalendarIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1.5 sm:mr-2 text-zinc-400" />
                       <span className="text-xs font-medium text-zinc-300">
                         {viewingReminder && formatDate(viewingReminder.dueDate)}
                       </span>
@@ -582,11 +609,11 @@ export default function RemindersPage({ params }: PageProps) {
                   </div>
 
                   <div>
-                    <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-2">
+                    <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-1 sm:mb-2">
                       Created
                     </h4>
                     <div className="flex items-center bg-zinc-800/50 rounded-md p-2">
-                      <Clock className="h-3.5 w-3.5 mr-2 text-zinc-400" />
+                      <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1.5 sm:mr-2 text-zinc-400" />
                       <span className="text-xs font-medium text-zinc-300">
                         {viewingReminder && viewingReminder.createdAt
                           ? formatDate(viewingReminder.createdAt)
@@ -597,7 +624,7 @@ export default function RemindersPage({ params }: PageProps) {
                 </div>
 
                 <div>
-                  <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-2">
+                  <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-1 sm:mb-2">
                     Associated Prospect
                   </h4>
                   <div className="bg-zinc-800/50 rounded-md p-2 flex items-center">
@@ -608,12 +635,12 @@ export default function RemindersPage({ params }: PageProps) {
                 </div>
 
                 {/* Extra space at bottom for better scrolling */}
-                <div className="h-4"></div>
+                <div className="h-2 sm:h-4"></div>
               </div>
             </div>
 
             {/* Footer - Fixed */}
-            <div className="border-t border-zinc-800 bg-zinc-800/30 p-3 rounded-b-lg flex flex-col sm:flex-row gap-2 sticky bottom-0 bg-zinc-900 z-10">
+            <div className="border-t border-zinc-800 bg-zinc-800/30 p-2 sm:p-3 rounded-b-lg flex flex-wrap gap-2 sticky bottom-0 bg-zinc-900 z-10">
               <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-start">
                 {viewingReminder?.status !== "completed" && (
                   <Button
@@ -647,7 +674,7 @@ export default function RemindersPage({ params }: PageProps) {
                   Delete
                 </Button>
               </div>
-              <div className="flex gap-2 w-full sm:w-auto justify-end">
+              <div className="flex gap-2 w-full sm:w-auto justify-start sm:justify-end mt-1 sm:mt-0">
                 <Button
                   variant="outline"
                   size="sm"
@@ -682,6 +709,17 @@ export default function RemindersPage({ params }: PageProps) {
         .scrollbar-none {
           -ms-overflow-style: none;
           scrollbar-width: none;
+        }
+
+        /* Make tabs scrollable on mobile */
+        @media (max-width: 640px) {
+          .overflow-x-auto::-webkit-scrollbar {
+            display: none;
+          }
+          .overflow-x-auto {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
         }
       `}</style>
     </div>

@@ -42,7 +42,7 @@ export function NavUser({
     role?: string;
   };
 }) {
-  const { isMobile } = useSidebar();
+  const { isMobile, setOpenMobile } = useSidebar();
   const { logout, user: authUser } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -73,6 +73,11 @@ export function NavUser({
     } else {
       // Default fallback if role is unknown
       router.push("/profile");
+    }
+
+    // Close the mobile sidebar if we're on mobile
+    if (isMobile) {
+      setOpenMobile(false);
     }
   };
 
@@ -120,20 +125,27 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <button className="w-full" onClick={handleProfileClick}>
-                <DropdownMenuItem>
-                  <User />
-                  Account
-                </DropdownMenuItem>
-              </button>
+              <DropdownMenuItem
+                onClick={() => {
+                  handleProfileClick();
+                }}
+              >
+                <User className="mr-2 h-4 w-4" />
+                Account
+              </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <button className="w-full" onClick={handleLogout}>
-              <DropdownMenuItem>
-                <LogOut />
-                Sign out
-              </DropdownMenuItem>
-            </button>
+            <DropdownMenuItem
+              onClick={() => {
+                if (isMobile) {
+                  setOpenMobile(false);
+                }
+                handleLogout();
+              }}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign out
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>

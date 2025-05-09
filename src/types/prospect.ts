@@ -1,17 +1,11 @@
 export interface Address {
-  street: string;
-  city: string;
-  state: string;
-  zip: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
 }
 
-export enum EducationLevel {
-  HIGH_SCHOOL = "High School",
-  ASSOCIATES = "Associates Degree",
-  BACHELORS = "Bachelor's Degree",
-  MASTERS = "Master's Degree",
-  PHD = "Doctorate",
-}
+export type EducationLevel = number;
 
 export enum Gender {
   MALE = "Male",
@@ -49,6 +43,19 @@ export enum PreferredContactMethod {
   TEXT = "Text",
 }
 
+// Change Campus from enum to string type
+export type Campus = string;
+
+// Define constants for standard campus values but don't use enum
+export const CAMPUS = {
+  MAIN: "Main Campus",
+  DOWNTOWN: "Downtown Campus",
+  WEST: "West Campus",
+  NORTH: "North Campus",
+  SOUTH: "South Campus",
+  ONLINE: "Online Campus",
+};
+
 export interface User {
   id: string;
   firstName: string;
@@ -59,46 +66,42 @@ export interface User {
 
 export interface Prospect {
   id: string;
-  fullName: string;
+  fullName?: string;
   firstName: string;
   lastName: string;
-  gender: Gender;
-  genderOther: string;
   phone: string;
-  email: string;
-  address: Address;
-  educationLevel: EducationLevel;
-  dateOfBirth: string;
-  preferredContactMethod: PreferredContactMethod;
-  interests: string[];
-  notes: string;
-  status: Status;
-  lastContact: string;
-  createdAt: string;
-  updatedAt: string;
-  addedBy: User;
-  assignedTo: User;
+  email?: string;
+  address?: Address;
+  educationLevel?: EducationLevel;
+  preferredContactMethod?: PreferredContactMethod;
+  campus?: Campus;
+  interests?: string[];
+  notes?: string;
+  status?: Status;
+  lastContact?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  addedBy?: User;
+  assignedTo?: User;
 }
 
 export interface Student {
   id: string;
-  fullName: string;
+  fullName?: string;
   firstName: string;
   lastName: string;
-  gender: Gender;
-  genderOther: string;
   phone: string;
-  email: string;
-  address: Address;
-  educationLevel: EducationLevel;
-  dateOfBirth: string;
-  preferredContactMethod: PreferredContactMethod;
-  interests: string[];
-  notes: string;
-  status: Status;
-  lastContact: string;
-  createdAt: string;
-  updatedAt: string;
-  addedBy: User;
-  assignedTo: User;
+  email?: string;
+  address?: Address;
+  educationLevel?: EducationLevel;
+  preferredContactMethod?: PreferredContactMethod;
+  campus?: Campus;
+  interests?: string[];
+  notes?: string;
+  status?: Status;
+  lastContact?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  addedBy?: User;
+  assignedTo?: User;
 }

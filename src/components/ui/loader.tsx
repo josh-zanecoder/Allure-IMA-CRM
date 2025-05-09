@@ -46,23 +46,23 @@ export default function Loader({
   }, [theme]);
 
   const LoaderContent = () => (
-    <div className="flex flex-col items-center gap-8">
+    <div className="flex flex-col items-center gap-4 sm:gap-8">
       <Image
         src={logoSrc}
         alt="Allure IMA Logo"
         width={500}
         height={150}
-        className="h-32 w-auto [filter:contrast(1.5)_brightness(1.4)] dark:[filter:contrast(1.6)_brightness(1.5)]"
+        className="h-16 sm:h-24 md:h-32 w-auto [filter:contrast(1.5)_brightness(1.4)] dark:[filter:contrast(1.6)_brightness(1.5)]"
         priority
       />
-      <div className="w-96 h-2.5 bg-muted rounded-full overflow-hidden">
+      <div className="w-full max-w-[90vw] sm:max-w-[24rem] sm:w-96 h-2 sm:h-2.5 bg-muted rounded-full overflow-hidden">
         <div
           className="h-full bg-primary transition-all duration-50 ease-linear" // Faster transition
           style={{ width: `${progress}%` }}
         />
       </div>
       {message && (
-        <p className="text-sm text-muted-foreground animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <p className="text-xs sm:text-sm text-center text-muted-foreground animate-in fade-in slide-in-from-bottom-2 duration-300">
           {message}
         </p>
       )}
@@ -73,7 +73,7 @@ export default function Loader({
     return (
       <div
         className={cn(
-          "fixed inset-0 z-100 flex flex-col items-center justify-center bg-background/70 backdrop-blur-sm p-6",
+          "fixed inset-0 z-100 flex flex-col items-center justify-center bg-background/70 backdrop-blur-sm p-4 sm:p-6",
           "animate-in fade-in zoom-in-95 duration-300",
           "data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95",
           !isVisible && "opacity-0"
@@ -88,7 +88,7 @@ export default function Loader({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center p-4 sm:p-6",
+        "flex flex-col items-center justify-center p-3 sm:p-4 md:p-6",
         "animate-in fade-in zoom-in-95 duration-300",
         "data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95",
         !isVisible && "opacity-0"

@@ -10,7 +10,16 @@ import {
   PlusIcon,
   EyeIcon,
 } from "@heroicons/react/24/outline";
-import { Users, Clock, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import {
+  Users,
+  Clock,
+  ArrowUpRight,
+  ArrowDownRight,
+  GraduationCap,
+  School,
+  BookOpen,
+  Calendar,
+} from "lucide-react";
 import { toast } from "react-hot-toast";
 import {
   Card,
@@ -61,15 +70,27 @@ interface DashboardStats {
   pendingReminders: number;
   upcomingReminders: Reminder[];
   recentActivities: Activity[];
-  prospectGrowth: {
+  enrollmentLeads: {
+    count: number;
     percent: string;
     trend: "up" | "down";
     comparison: string;
   };
-  reminderChange: {
+  applicationRate: {
+    count: number;
     percent: string;
     trend: "up" | "down";
     comparison: string;
+  };
+  programInterest: {
+    topProgram: string;
+    count: number;
+    percentChange: string;
+    trend: "up" | "down";
+  };
+  campusDistribution: {
+    topCampus: string;
+    percent: string;
   };
 }
 
@@ -84,8 +105,28 @@ export default function DashboardPage() {
     pendingReminders: 0,
     upcomingReminders: [],
     recentActivities: [],
-    prospectGrowth: { percent: "0.0", trend: "up", comparison: "month" },
-    reminderChange: { percent: "0.0", trend: "down", comparison: "week" },
+    enrollmentLeads: {
+      count: 0,
+      percent: "0.0",
+      trend: "up",
+      comparison: "month",
+    },
+    applicationRate: {
+      count: 0,
+      percent: "0.0",
+      trend: "up",
+      comparison: "week",
+    },
+    programInterest: {
+      topProgram: "Unknown",
+      count: 0,
+      percentChange: "0.0",
+      trend: "up",
+    },
+    campusDistribution: {
+      topCampus: "Main Campus",
+      percent: "0.0",
+    },
   });
 
   const fetchDashboardData = async () => {
@@ -202,7 +243,7 @@ export default function DashboardPage() {
               <Skeleton className="h-3 sm:h-4 w-40 sm:w-48" />
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <Skeleton className="h-9 sm:h-10 w-full" />
                 <Skeleton className="h-9 sm:h-10 w-full" />
               </div>
@@ -276,34 +317,34 @@ export default function DashboardPage() {
                   </div>
                   <Badge
                     variant={
-                      stats.prospectGrowth.trend === "up"
+                      stats.enrollmentLeads.trend === "up"
                         ? "default"
                         : "destructive"
                     }
                     className="flex gap-1 rounded-lg text-xs whitespace-nowrap"
                   >
-                    {stats.prospectGrowth.trend === "up" ? (
+                    {stats.enrollmentLeads.trend === "up" ? (
                       <ArrowUpRight className="size-3" />
                     ) : (
                       <ArrowDownRight className="size-3" />
                     )}
-                    {stats.prospectGrowth.percent}%
+                    {stats.enrollmentLeads.percent}%
                   </Badge>
                 </div>
               </CardHeader>
               <CardFooter className="flex-col items-start gap-1 text-sm">
                 <div className="line-clamp-1 flex gap-2 font-medium">
-                  {stats.prospectGrowth.trend === "up"
+                  {stats.enrollmentLeads.trend === "up"
                     ? "Growing steadily"
                     : "Decreasing"}
-                  {stats.prospectGrowth.trend === "up" ? (
+                  {stats.enrollmentLeads.trend === "up" ? (
                     <ArrowUpRight className="size-3 sm:size-4" />
                   ) : (
                     <ArrowDownRight className="size-3 sm:size-4" />
                   )}
                 </div>
                 <div className="text-xs sm:text-sm text-muted-foreground">
-                  Compared to last {stats.prospectGrowth.comparison}
+                  Compared to last {stats.enrollmentLeads.comparison}
                 </div>
               </CardFooter>
             </Card>
@@ -324,35 +365,35 @@ export default function DashboardPage() {
                   </div>
                   <Badge
                     variant={
-                      stats.reminderChange.trend === "down"
+                      stats.applicationRate.trend === "down"
                         ? "default"
                         : "destructive"
                     }
                     className="flex gap-1 rounded-lg text-xs whitespace-nowrap"
                   >
-                    {stats.reminderChange.trend === "up" ? (
+                    {stats.applicationRate.trend === "up" ? (
                       <ArrowUpRight className="size-3" />
                     ) : (
                       <ArrowDownRight className="size-3" />
                     )}
-                    {stats.reminderChange.percent}%
+                    {stats.applicationRate.percent}%
                   </Badge>
                 </div>
               </CardHeader>
               <CardFooter className="flex-col items-start gap-1 text-sm">
                 <div className="line-clamp-1 flex gap-2 font-medium">
-                  {stats.reminderChange.trend === "down"
+                  {stats.applicationRate.trend === "down"
                     ? "Decreased"
                     : "Increased"}{" "}
-                  this {stats.reminderChange.comparison}
-                  {stats.reminderChange.trend === "down" ? (
+                  this {stats.applicationRate.comparison}
+                  {stats.applicationRate.trend === "down" ? (
                     <ArrowDownRight className="size-3 sm:size-4" />
                   ) : (
                     <ArrowUpRight className="size-3 sm:size-4" />
                   )}
                 </div>
                 <div className="text-xs sm:text-sm text-muted-foreground">
-                  {stats.reminderChange.trend === "down"
+                  {stats.applicationRate.trend === "down"
                     ? "Good task completion rate"
                     : "More tasks pending than before"}
                 </div>
@@ -371,7 +412,7 @@ export default function DashboardPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <Button
                   onClick={() => router.push("/salesperson/prospects")}
                   className="w-full text-sm"

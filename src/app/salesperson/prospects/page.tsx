@@ -2,8 +2,8 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { Plus, Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useUserStore } from "@/store/useUserStore";
 import { usePaginationStore } from "@/store/usePaginationStore";
@@ -16,7 +16,11 @@ export default function ProspectsPage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const [progress, setProgress] = useState(0);
-  const { fetchProspects } = usePaginationStore();
+  const { fetchProspects, lastFetchStatus } = usePaginationStore();
+  const [initialFetchDone, setInitialFetchDone] = useState(false);
+  const [isAddingProspect, setIsAddingProspect] = useState(false);
+  const [addProgress, setAddProgress] = useState(0);
+  const [shouldNavigate, setShouldNavigate] = useState(false);
 
   // Effect to redirect if not a salesperson
   useEffect(() => {
@@ -25,12 +29,13 @@ export default function ProspectsPage() {
     }
   }, [user, isLoading, router]);
 
-  // Effect to fetch prospects when user is loaded
+  // Effect to fetch prospects when user is loaded - only once
   useEffect(() => {
-    if (user) {
+    if (user && !initialFetchDone) {
       fetchProspects();
+      setInitialFetchDone(true);
     }
-  }, [user, fetchProspects]);
+  }, [user, fetchProspects, initialFetchDone]);
 
   // Effect for loading progress animation
   useEffect(() => {
@@ -48,6 +53,41 @@ export default function ProspectsPage() {
     }
   }, [isLoading]);
 
+  // Effect for add prospect progress animation
+  useEffect(() => {
+    if (isAddingProspect) {
+      const timer = setInterval(() => {
+        setAddProgress((prev) => {
+          if (prev >= 95) {
+            clearInterval(timer);
+            setShouldNavigate(true);
+            return 95;
+          }
+          return prev + 15;
+        });
+      }, 50);
+      return () => clearInterval(timer);
+    } else {
+      setAddProgress(0);
+      setShouldNavigate(false);
+    }
+  }, [isAddingProspect]);
+
+  // Separate effect for navigation to avoid React errors
+  useEffect(() => {
+    if (shouldNavigate) {
+      // Small timeout to ensure state updates are processed first
+      const navigationTimer = setTimeout(() => {
+        router.push("/salesperson/prospects/new");
+      }, 10);
+      return () => clearTimeout(navigationTimer);
+    }
+  }, [shouldNavigate, router]);
+
+  const handleAddProspect = useCallback(() => {
+    setIsAddingProspect(true);
+  }, []);
+
   // Render loading state
   if (isLoading) {
     return (
@@ -55,6 +95,23 @@ export default function ProspectsPage() {
         <div className="flex flex-col items-center gap-3 w-[200px]">
           <Progress value={progress} className="w-full" />
           <p className="text-sm text-muted-foreground">Loading prospects...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Render add prospect loading state
+  if (isAddingProspect) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3 w-[250px]">
+          <Progress value={addProgress} className="w-full" />
+          <div className="flex items-center justify-center">
+            <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+            <p className="text-sm text-muted-foreground">
+              Creating new prospect...
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -77,7 +134,7 @@ export default function ProspectsPage() {
           </p>
         </div>
         <Button
-          onClick={() => router.push("/salesperson/prospects/new")}
+          onClick={handleAddProspect}
           size="sm"
           className="w-full sm:w-auto"
         >

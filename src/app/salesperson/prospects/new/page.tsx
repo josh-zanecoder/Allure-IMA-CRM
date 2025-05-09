@@ -23,7 +23,7 @@ import {
   Status,
   Student,
   PreferredContactMethod,
-  Gender,
+  CAMPUS,
 } from "@/types/prospect";
 import { ProspectSchema } from "@/lib/validation/student-schema";
 import { useProspectStore } from "@/store/useProspectStore";
@@ -47,8 +47,6 @@ const initialFormState: Omit<Student, "id" | "createdAt" | "updatedAt"> = {
   firstName: "",
   lastName: "",
   email: "",
-  gender: Gender.OTHER,
-  genderOther: "",
   phone: "",
   address: {
     street: "",
@@ -56,28 +54,14 @@ const initialFormState: Omit<Student, "id" | "createdAt" | "updatedAt"> = {
     state: "",
     zip: "",
   },
-  dateOfBirth: "",
-  educationLevel: EducationLevel.HIGH_SCHOOL,
+  educationLevel: 1,
+  campus: undefined,
   interests: [],
-  preferredContactMethod: PreferredContactMethod.EMAIL,
+  preferredContactMethod: PreferredContactMethod.CALL,
   notes: "",
   status: Status.New,
   fullName: "",
   lastContact: new Date().toISOString().split("T")[0],
-  addedBy: {
-    id: "",
-    firstName: "",
-    lastName: "",
-    email: "",
-    role: "",
-  },
-  assignedTo: {
-    id: "",
-    firstName: "",
-    lastName: "",
-    email: "",
-    role: "",
-  },
 };
 
 export default function AddStudentPage() {
@@ -109,6 +93,8 @@ export default function AddStudentPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const loadingToast = toast.loading("Saving student...");
+
+    console.log("Submitting form data:", JSON.stringify(formData, null, 2));
 
     // Validate the form data first
     try {
@@ -171,6 +157,7 @@ export default function AddStudentPage() {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
+    console.log(`Field ${name} changed to value: "${value}"`);
 
     if (name === "phone") {
       const formattedPhone = formatPhoneNumber(value);
@@ -182,39 +169,42 @@ export default function AddStudentPage() {
       return;
     }
 
-    if (name === "gender") {
-      // Clear genderOther if gender is not "Other"
-      if (value !== Gender.OTHER) {
-        setFormData((prev) => ({
-          ...prev,
-          gender: value as Gender,
-          genderOther: "",
-        }));
-      } else {
-        setFormData((prev) => ({
-          ...prev,
-          gender: value as Gender,
-        }));
-      }
-      setErrors((prev) => ({ ...prev, gender: "", genderOther: "" }));
-      return;
-    }
-
     if (name.startsWith("address.")) {
       const field = name.split(".")[1];
       setFormData((prev) => ({
         ...prev,
         address: {
-          ...prev.address,
+          ...(prev.address || {}),
           [field]: value,
         },
       }));
       setErrors((prev) => ({ ...prev, [`address.${field}`]: "" }));
     } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
+      // Handle empty campus value
+      let newValue;
+      if (name === "campus") {
+        newValue = value === "" ? undefined : value;
+      } else {
+        newValue = name === "educationLevel" ? Number(value) : value;
+      }
+
+      console.log(
+        `Setting ${name} to ${JSON.stringify(
+          newValue
+        )} (type: ${typeof newValue})`
+      );
+
+      setFormData((prev) => {
+        const updated = {
+          ...prev,
+          [name]: newValue,
+        };
+        console.log(
+          `Updated formData for ${name}:`,
+          updated[name as keyof typeof updated]
+        );
+        return updated;
+      });
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
@@ -222,9 +212,11 @@ export default function AddStudentPage() {
   const handleInterestToggle = (interest: string) => {
     setFormData((prev) => ({
       ...prev,
-      interests: prev.interests.includes(interest)
-        ? prev.interests.filter((i) => i !== interest)
-        : [...prev.interests, interest],
+      interests: prev.interests
+        ? prev.interests.includes(interest)
+          ? prev.interests.filter((i) => i !== interest)
+          : [...prev.interests, interest]
+        : [interest],
     }));
   };
 
@@ -236,15 +228,15 @@ export default function AddStudentPage() {
           type="button"
           variant="ghost"
           onClick={() => router.back()}
-          className="mb-5"
+          className="mb-5 text-lg py-6 px-5"
         >
-          ← Back
+          ← Back To Prospects
         </Button>
 
         {/* Personal Info */}
         <Card>
           <CardHeader>
-            <CardTitle>Personal Information</CardTitle>
+            <CardTitle>Student Information</CardTitle>
             <CardDescription>Basic details about the student.</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -277,104 +269,12 @@ export default function AddStudentPage() {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="gender">Gender</Label>
-              <select
-                id="gender"
-                name="gender"
-                value={formData.gender}
-                onChange={handleChange}
-                className={`flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
-                  errors.gender ? "border-destructive" : "border-input"
-                }`}
-              >
-                <option value="">Select gender</option>
-                {Object.values(Gender).map((gender) => (
-                  <option key={gender} value={gender}>
-                    {gender}
-                  </option>
-                ))}
-              </select>
-              {formData.gender === Gender.OTHER && (
-                <div className="mt-2">
-                  <Label htmlFor="genderOther" className="m-2">
-                    Please specify
-                  </Label>
-                  <Input
-                    id="genderOther"
-                    name="genderOther"
-                    value={formData.genderOther}
-                    onChange={handleChange}
-                    placeholder="Specify gender"
-                    className={errors.genderOther ? "border-destructive" : ""}
-                  />
-                  {errors.genderOther && (
-                    <p className="text-xs text-destructive">
-                      {errors.genderOther}
-                    </p>
-                  )}
-                </div>
-              )}
-              {errors.gender && (
-                <p className="text-xs text-destructive">{errors.gender}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="dateOfBirth">Date of Birth</Label>
-              <div className="relative">
-                <style jsx global>
-                  {datePickerStyles}
-                </style>
-                <div className="date-input-container flex w-full max-w-[180px] relative">
-                  <Input
-                    ref={dateInputRef}
-                    id="dateOfBirth"
-                    name="dateOfBirth"
-                    type="date"
-                    value={formData.dateOfBirth}
-                    onChange={handleChange}
-                    max={maxDate}
-                    className={`${
-                      errors.dateOfBirth ? "border-destructive" : ""
-                    } date-input pl-3 pr-10 w-full border border-input bg-transparent`}
-                    style={{
-                      colorScheme: "dark",
-                      WebkitAppearance: "none",
-                      MozAppearance: "none",
-                      appearance: "none",
-                    }}
-                    placeholder="mm/dd/yyyy"
-                  />
-                  <div
-                    className="absolute inset-y-0 right-2 flex items-center cursor-pointer"
-                    onClick={handleDateIconClick}
-                  >
-                    <CalendarIcon className="h-4 w-4 text-gray-400" />
-                  </div>
-                </div>
-                {errors.dateOfBirth && (
-                  <p className="text-xs text-destructive mt-1">
-                    {errors.dateOfBirth}
-                  </p>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Contact Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Contact Information</CardTitle>
-            <CardDescription>How can we reach the student?</CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 name="email"
                 type="email"
-                value={formData.email}
+                value={formData.email || ""}
                 onChange={handleChange}
                 placeholder="student@example.com"
                 className={errors.email ? "border-destructive" : ""}
@@ -415,7 +315,7 @@ export default function AddStudentPage() {
               <select
                 id="preferredContactMethod"
                 name="preferredContactMethod"
-                value={formData.preferredContactMethod}
+                value={formData.preferredContactMethod || ""}
                 onChange={handleChange}
                 className={`flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                   errors.preferredContactMethod
@@ -435,6 +335,27 @@ export default function AddStudentPage() {
                 </p>
               )}
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <select
+                id="status"
+                name="status"
+                value={formData.status || ""}
+                onChange={handleChange}
+                className={`flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                  errors.status ? "border-destructive" : "border-input"
+                }`}
+              >
+                {Object.values(Status).map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </select>
+              {errors.status && (
+                <p className="text-xs text-destructive">{errors.status}</p>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -450,7 +371,7 @@ export default function AddStudentPage() {
               <Input
                 id="address.street"
                 name="address.street"
-                value={formData.address.street}
+                value={formData.address?.street || ""}
                 onChange={handleChange}
                 placeholder="Enter street address"
                 className={errors["address.street"] ? "border-destructive" : ""}
@@ -466,7 +387,7 @@ export default function AddStudentPage() {
               <Input
                 id="address.city"
                 name="address.city"
-                value={formData.address.city}
+                value={formData.address?.city || ""}
                 onChange={handleChange}
                 placeholder="Enter city"
                 className={errors["address.city"] ? "border-destructive" : ""}
@@ -482,7 +403,7 @@ export default function AddStudentPage() {
               <Input
                 id="address.state"
                 name="address.state"
-                value={formData.address.state}
+                value={formData.address?.state || ""}
                 onChange={handleChange}
                 placeholder="Enter state"
                 className={errors["address.state"] ? "border-destructive" : ""}
@@ -498,9 +419,9 @@ export default function AddStudentPage() {
               <Input
                 id="address.zip"
                 name="address.zip"
-                value={formData.address.zip}
+                value={formData.address?.zip || ""}
                 onChange={handleChange}
-                placeholder="Enter ZIP code (numbers only)"
+                placeholder="Enter ZIP code (optional)"
                 className={errors["address.zip"] ? "border-destructive" : ""}
               />
               {errors["address.zip"] && (
@@ -513,60 +434,94 @@ export default function AddStudentPage() {
         </Card>
 
         {/* Education & Interests */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Education</CardTitle>
+                <CardDescription>
+                  Student's education background.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Label htmlFor="educationLevel">Education Level (1-20)</Label>
+                <select
+                  id="educationLevel"
+                  name="educationLevel"
+                  value={formData.educationLevel || ""}
+                  onChange={handleChange}
+                  className={`flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                    errors.educationLevel
+                      ? "border-destructive"
+                      : "border-input"
+                  }`}
+                >
+                  <option value="">Select education level</option>
+                  {Array.from({ length: 20 }, (_, i) => i + 1).map((level) => (
+                    <option key={level} value={level}>
+                      {level}
+                    </option>
+                  ))}
+                </select>
+                {errors.educationLevel && (
+                  <p className="text-xs text-destructive">
+                    {errors.educationLevel}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Campus</CardTitle>
+                <CardDescription>Preferred campus location.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Label htmlFor="campus">Campus</Label>
+                <select
+                  id="campus"
+                  name="campus"
+                  value={formData.campus || ""}
+                  onChange={handleChange}
+                  className={`flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                    errors.campus ? "border-destructive" : "border-input"
+                  }`}
+                >
+                  <option value="">Select campus</option>
+                  {Object.values(CAMPUS).map((campus) => (
+                    <option key={campus} value={campus}>
+                      {campus}
+                    </option>
+                  ))}
+                </select>
+                {errors.campus && (
+                  <p className="text-xs text-destructive">{errors.campus}</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
           <Card>
             <CardHeader>
-              <CardTitle>Education</CardTitle>
-              <CardDescription>Student's education background.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Label htmlFor="educationLevel">Education Level</Label>
-              <select
-                id="educationLevel"
-                name="educationLevel"
-                value={formData.educationLevel}
-                onChange={handleChange}
-                className={`flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
-                  errors.educationLevel ? "border-destructive" : "border-input"
-                }`}
-              >
-                <option value="">Select education level</option>
-                {Object.values(EducationLevel).map((level) => (
-                  <option key={level} value={level}>
-                    {level}
-                  </option>
-                ))}
-              </select>
-              {errors.educationLevel && (
-                <p className="text-xs text-destructive">
-                  {errors.educationLevel}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Interests</CardTitle>
+              <CardTitle>Program Interests</CardTitle>
               <CardDescription>
                 What is the student interested in?
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-3">
                 {Object.values(Interest).map((interest) => (
                   <Badge
                     key={interest}
                     variant={
-                      formData.interests.includes(interest)
+                      formData.interests?.includes(interest)
                         ? "secondary"
                         : "outline"
                     }
-                    className="cursor-pointer"
+                    className="cursor-pointer text-base py-2 px-4"
                     onClick={() => handleInterestToggle(interest)}
                   >
                     {interest}
-                    {formData.interests.includes(interest) && (
-                      <span className="ml-1">×</span>
+                    {formData.interests?.includes(interest) && (
+                      <span className="ml-2">×</span>
                     )}
                   </Badge>
                 ))}
@@ -575,48 +530,25 @@ export default function AddStudentPage() {
           </Card>
         </div>
 
-        {/* Additional Info */}
+        {/* Notes */}
         <Card>
           <CardHeader>
             <CardTitle>Additional Information</CardTitle>
-            <CardDescription>
-              Notes and status for this student.
-            </CardDescription>
+            <CardDescription>Notes about this student.</CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <CardContent>
             <div className="space-y-2">
               <Label htmlFor="notes">Notes</Label>
               <Input
                 id="notes"
                 name="notes"
-                value={formData.notes}
+                value={formData.notes || ""}
                 onChange={handleChange}
                 placeholder="Additional notes about the student"
                 className={errors.notes ? "border-destructive" : ""}
               />
               {errors.notes && (
                 <p className="text-xs text-destructive">{errors.notes}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <select
-                id="status"
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                className={`flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
-                  errors.status ? "border-destructive" : "border-input"
-                }`}
-              >
-                {Object.values(Status).map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-              {errors.status && (
-                <p className="text-xs text-destructive">{errors.status}</p>
               )}
             </div>
           </CardContent>

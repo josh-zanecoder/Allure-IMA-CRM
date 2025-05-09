@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { usePaginationStore } from "@/store/usePaginationStore";
 import { useCallStore } from "@/store/useCallStore";
@@ -6,6 +6,7 @@ import { Prospect } from "@/types/prospect";
 import { formatAddress, formatPhoneNumber } from "@/utils/formatters";
 import { toast } from "sonner";
 import axios from "axios";
+import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 
 import {
   Table,
@@ -51,6 +52,7 @@ import {
   Search,
   MoreHorizontal,
   Trash2,
+  GraduationCap,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -66,6 +68,7 @@ export function ProspectList() {
     prospects,
     isLoading: isLoadingProspects,
     fetchProspects,
+    lastFetchStatus,
   } = usePaginationStore();
   const { makeCall, isCalling } = useCallStore();
   const [isDeleting, setIsDeleting] = useState(false);
@@ -88,7 +91,7 @@ export function ProspectList() {
 
   const handleSendEmail = (prospect: Prospect) => {
     const subject = `Regarding ${prospect.fullName}`;
-    const body = `Hello,\n\nI hope this email finds you well. I wanted to reach out regarding ${prospect.fullName}.\n\nBest regards,\n${prospect.assignedTo.email}`;
+    const body = `Hello,\n\nI hope this email finds you well. I wanted to reach out regarding ${prospect.fullName}.\n\nBest regards,\n${prospect.assignedTo?.email}`;
 
     const mailtoLink = `mailto:${prospect.email}?subject=${encodeURIComponent(
       subject
@@ -131,6 +134,14 @@ export function ProspectList() {
       setProspectToDelete(null);
     }
   };
+
+  // Prevent unnecessary API calls when no prospects are found
+  useEffect(() => {
+    // Only log the empty state once to avoid console spam
+    if (lastFetchStatus === "empty") {
+      console.log("No prospects found in the database");
+    }
+  }, [lastFetchStatus]);
 
   if (isLoadingProspects) {
     return (
@@ -265,15 +276,24 @@ export function ProspectList() {
                           }
                           className={
                             prospect.educationLevel
-                              ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-500"
-                              : ""
+                              ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-500 flex items-center gap-1.5"
+                              : "flex items-center gap-1.5"
                           }
                         >
-                          {prospect.educationLevel}
+                          {prospect.educationLevel ? (
+                            <>
+                              <GraduationCap className="h-3 w-3" />
+                              {prospect.educationLevel}
+                            </>
+                          ) : (
+                            "Not Specified"
+                          )}
                         </Badge>
                       </TableCell>
                       <TableCell className="hidden sm:table-cell text-right">
-                        {new Date(prospect.lastContact).toLocaleDateString()}
+                        {new Date(
+                          prospect.lastContact || ""
+                        ).toLocaleDateString()}
                       </TableCell>
                       <TableCell
                         className="w-8"
@@ -340,9 +360,11 @@ export function ProspectList() {
             {prospects.length === 0 && (
               <div className="flex flex-col items-center justify-center py-12">
                 <Search className="h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-semibold">No results found</h3>
+                <h3 className="mt-4 text-lg font-semibold">
+                  No prospects found
+                </h3>
                 <p className="text-sm text-muted-foreground">
-                  Try adjusting your search terms
+                  No prospects are currently available in the system
                 </p>
               </div>
             )}
@@ -402,12 +424,8 @@ export function ProspectList() {
                   <span>{formatAddress(prospect.address)}</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  <Globe className="h-4 w-4 text-muted-foreground" />
-                  <span>{prospect.dateOfBirth}</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs">
                   <User className="h-4 w-4 text-muted-foreground" />
-                  <span>Assigned to {prospect.assignedTo.email}</span>
+                  <span>Assigned to {prospect.assignedTo?.email}</span>
                 </div>
               </div>
 
@@ -416,33 +434,60 @@ export function ProspectList() {
                   variant={prospect.educationLevel ? "default" : "destructive"}
                   className={
                     prospect.educationLevel
-                      ? "bg-green-100 text-green-800 text-xs"
-                      : "text-xs"
+                      ? "bg-emerald-100 text-emerald-800 text-xs flex items-center gap-1.5 px-2.5 py-1"
+                      : "text-xs flex items-center gap-1.5 px-2.5 py-1"
                   }
                 >
-                  {prospect.educationLevel}
+                  {prospect.educationLevel ? (
+                    <>
+                      <GraduationCap className="h-3 w-3" />
+                      {prospect.educationLevel}
+                    </>
+                  ) : (
+                    <>
+                      <ExclamationTriangleIcon className="h-3 w-3" />
+                      Not Specified
+                    </>
+                  )}
                 </Badge>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => handleRowClick(prospect.id)}
-                >
-                  View
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => handleMakeCall(prospect)}
-                  disabled={isCalling}
-                >
-                  Call
-                </Button>
+                <div className="grid grid-cols-1 gap-2">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => handleRowClick(prospect.id)}
+                  >
+                    <User className="mr-2 h-4 w-4" />
+                    View
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => handleMakeCall(prospect)}
+                    disabled={isCalling}
+                  >
+                    <Phone className="mr-2 h-4 w-4" />
+                    Call
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
         ))}
+        {prospects.length === 0 && (
+          <Card className="p-6">
+            <div className="flex flex-col items-center justify-center py-4">
+              <Search className="h-10 w-10 text-muted-foreground" />
+              <h3 className="mt-4 text-base font-semibold">
+                No prospects found
+              </h3>
+              <p className="text-xs text-center text-muted-foreground">
+                No prospects are currently available in the system
+              </p>
+            </div>
+          </Card>
+        )}
       </div>
 
       {/* Delete Confirmation Dialog */}

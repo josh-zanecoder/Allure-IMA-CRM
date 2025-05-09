@@ -147,22 +147,49 @@ export const useProspectStore = create<ProspectStore>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
 
+      console.log(
+        "Updating prospect data:",
+        JSON.stringify(prospectData, null, 2)
+      );
+      console.log("Campus in update data:", prospectData.campus);
+
       const response = await axios.put(
         `/api/prospects/${id}/details`,
         prospectData
       );
 
+      console.log(
+        "Update response data:",
+        JSON.stringify(response.data, null, 2)
+      );
+      console.log("Campus in update response:", response.data.campus);
+
       if (response.data) {
+        // Fix for missing campus in response
+        const responseData = {
+          ...response.data,
+        };
+
+        // If campus is missing in the response but was in the submitted data,
+        // add it back to the responseData
+        if (!responseData.campus && prospectData.campus) {
+          console.log(
+            "Adding missing campus to update response:",
+            prospectData.campus
+          );
+          responseData.campus = prospectData.campus;
+        }
+
         // Update the current prospect in state
         set((state) => ({
-          currentProspect: response.data,
+          currentProspect: responseData,
           // Also update the prospect in the prospects array if it exists
           prospects: state.prospects.map((p) =>
-            p.id === id ? response.data : p
+            p.id === id ? responseData : p
           ),
           isLoading: false,
         }));
-        return response.data;
+        return responseData;
       } else {
         throw new Error("Invalid response format");
       }
@@ -191,16 +218,8 @@ export const useProspectStore = create<ProspectStore>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
 
-      // First check if email already exists
-      const emailCheckResponse = await axios.get(
-        `/api/prospects/check-email?email=${encodeURIComponent(
-          prospectData.email
-        )}`
-      );
-
-      if (emailCheckResponse.data.exists) {
-        throw new Error("A student with this email already exists");
-      }
+      // We don't need to check for duplicate email here anymore
+      // since the API will handle that validation
 
       // Prepare the data with fullName field
       const submitData = {
@@ -208,15 +227,40 @@ export const useProspectStore = create<ProspectStore>((set, get) => ({
         fullName: `${prospectData.firstName} ${prospectData.lastName}`,
       };
 
+      console.log(
+        "Submitting prospect data to API:",
+        JSON.stringify(submitData, null, 2)
+      );
+      console.log("Campus value type:", typeof submitData.campus);
+      console.log("Campus value:", submitData.campus);
+
       const response = await axios.post("/api/prospects/create", submitData);
 
+      console.log("API response data:", JSON.stringify(response.data, null, 2));
+      console.log("Campus in response:", response.data.campus);
+
       if (response.data) {
+        // Fix for missing campus in response
+        const responseData = {
+          ...response.data,
+        };
+
+        // If campus is missing in the response but was in the submitted data,
+        // add it back to the responseData
+        if (!responseData.campus && submitData.campus) {
+          console.log(
+            "Adding missing campus to store data:",
+            submitData.campus
+          );
+          responseData.campus = submitData.campus;
+        }
+
         // Add the new prospect to state
         set((state) => ({
-          prospects: [...state.prospects, response.data],
+          prospects: [...state.prospects, responseData],
           isLoading: false,
         }));
-        return response.data;
+        return responseData;
       } else {
         throw new Error("Invalid response format");
       }
