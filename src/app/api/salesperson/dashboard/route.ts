@@ -8,6 +8,38 @@ import mongoose from "mongoose";
 
 export const dynamic = "force-dynamic";
 
+// Define interfaces for the processed data
+interface ProcessedProspect {
+  _id: string;
+  firstName?: string;
+  lastName?: string;
+}
+
+interface ProcessedActivity {
+  _id: string;
+  title: string;
+  createdAt: string;
+  type: string;
+  dueDate: string | null;
+  prospectId: ProcessedProspect | string;
+}
+
+interface ProcessedReminder {
+  _id: string;
+  title: string;
+  dueDate: string;
+  type: string;
+  prospectId: ProcessedProspect | string;
+}
+
+// Define interface for Prospect document
+interface ProspectDocument {
+  _id: mongoose.Types.ObjectId;
+  firstName?: string;
+  lastName?: string;
+  [key: string]: any;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const userCookie = request.cookies.get("user")?.value;
@@ -57,151 +89,218 @@ export async function GET(request: NextRequest) {
     // Extract IDs for subsequent queries
     const prospectIds = currentProspects.map((p) => p._id);
 
-    // Run remaining queries in parallel
-    const [
-      pendingReminders,
-      lastMonthProspects,
-      previousWeekReminders,
-      upcomingRemindersRaw,
-      recentActivitiesRaw,
-    ] = await Promise.all([
-      // Current pending reminders
-      Reminder.countDocuments({
-        prospectId: { $in: prospectIds },
-        status: "PENDING",
-        isActive: true,
-      }),
+    // Run remaining queries in parallel with error handling for each
+    try {
+      // First, get data that doesn't require population
+      const [pendingReminders, lastMonthProspects, previousWeekReminders] =
+        await Promise.all([
+          // Current pending reminders
+          Reminder.countDocuments({
+            prospectId: { $in: prospectIds },
+            status: "PENDING",
+            isActive: true,
+          }),
 
-      // Last month prospects count
-      Prospect.countDocuments({
-        "assignedTo._id": userData.id,
-        createdAt: { $gte: lastMonthStart, $lt: currentMonthStart },
-      }),
+          // Last month prospects count
+          Prospect.countDocuments({
+            "assignedTo._id": userData.id,
+            createdAt: { $gte: lastMonthStart, $lt: currentMonthStart },
+          }),
 
-      // Previous week pending reminders
-      Reminder.countDocuments({
-        prospectId: { $in: prospectIds },
-        status: "PENDING",
-        isActive: true,
-        createdAt: { $gte: twoWeeksAgo, $lt: oneWeekAgo },
-      }),
+          // Previous week pending reminders
+          Reminder.countDocuments({
+            prospectId: { $in: prospectIds },
+            status: "PENDING",
+            isActive: true,
+            createdAt: { $gte: twoWeeksAgo, $lt: oneWeekAgo },
+          }),
+        ]);
 
-      // Upcoming reminders list with prospect data
-      Reminder.find({
+      // Get upcoming reminders without population first
+      const upcomingRemindersRaw = await Reminder.find({
         prospectId: { $in: prospectIds },
         dueDate: { $gte: new Date() },
         status: "PENDING",
         isActive: true,
       })
-        .populate("prospectId", "firstName lastName")
         .select("_id title dueDate type prospectId")
         .sort({ dueDate: 1 })
         .limit(5)
-        .lean(),
+        .lean();
 
-      // Recent activities list with prospect data
-      Activity.find({
-        prospectId: { $in: prospectIds },
-        isActive: true,
-      })
-        .populate("prospectId", "firstName lastName")
-        .select("_id title createdAt type prospectId dueDate")
-        .sort({ createdAt: -1 })
-        .limit(5)
-        .lean(),
-    ]);
+      // Process the reminders data without relying on population
+      const upcomingReminders: ProcessedReminder[] = await Promise.all(
+        upcomingRemindersRaw.map(async (reminder) => {
+          const r = reminder as any;
+          let prospectData: ProcessedProspect | string = "Unknown";
 
-    // Process the populated data to ensure it's serializable
-    const upcomingReminders = upcomingRemindersRaw.map((reminder) => {
-      const r = reminder as any; // Cast to any to handle lean() result
-      return {
-        _id: r._id.toString(),
-        title: r.title,
-        dueDate: r.dueDate?.toISOString() || new Date().toISOString(),
-        type: r.type,
-        prospectId: r.prospectId
-          ? {
-              _id: r.prospectId._id?.toString() || "",
-              firstName: r.prospectId.firstName || "",
-              lastName: r.prospectId.lastName || "",
+          // If prospectId exists, try to fetch the prospect data directly
+          if (r.prospectId && ObjectId.isValid(r.prospectId)) {
+            try {
+              const prospect = (await Prospect.findById(r.prospectId)
+                .select("firstName lastName")
+                .lean()) as ProspectDocument;
+
+              if (prospect) {
+                prospectData = {
+                  _id: r.prospectId.toString(),
+                  firstName: prospect.firstName || "",
+                  lastName: prospect.lastName || "",
+                };
+              }
+            } catch (error) {
+              console.error("Error fetching prospect for reminder:", error);
             }
-          : "Unknown",
-      };
-    });
+          }
 
-    // Process the populated activities data
-    const recentActivities = recentActivitiesRaw.map((activity) => {
-      const a = activity as any; // Cast to any to handle lean() result
-      return {
-        _id: a._id.toString(),
-        title: a.title,
-        createdAt: a.createdAt?.toISOString() || new Date().toISOString(),
-        type: a.type,
-        dueDate: a.dueDate?.toISOString() || null,
-        prospectId: a.prospectId
-          ? {
-              _id: a.prospectId._id?.toString() || "",
-              firstName: a.prospectId.firstName || "",
-              lastName: a.prospectId.lastName || "",
+          return {
+            _id: r._id.toString(),
+            title: r.title,
+            dueDate: r.dueDate?.toISOString() || new Date().toISOString(),
+            type: r.type,
+            prospectId: prospectData,
+          };
+        })
+      );
+
+      // Get recent activities separately with error handling
+      let recentActivities: ProcessedActivity[] = [];
+      try {
+        // Get activities without population first
+        const recentActivitiesRaw = await Activity.find({
+          prospectId: { $in: prospectIds },
+          isActive: true,
+        })
+          .select("_id title createdAt type prospectId dueDate")
+          .sort({ createdAt: -1 })
+          .limit(5)
+          .lean();
+
+        // Process the activities data without relying on population
+        recentActivities = await Promise.all(
+          recentActivitiesRaw.map(async (activity) => {
+            const a = activity as any;
+            let prospectData: ProcessedProspect | string = "Unknown";
+
+            // If prospectId exists, try to fetch the prospect data directly
+            if (a.prospectId && ObjectId.isValid(a.prospectId)) {
+              try {
+                const prospect = (await Prospect.findById(a.prospectId)
+                  .select("firstName lastName")
+                  .lean()) as ProspectDocument;
+
+                if (prospect) {
+                  prospectData = {
+                    _id: a.prospectId.toString(),
+                    firstName: prospect.firstName || "",
+                    lastName: prospect.lastName || "",
+                  };
+                }
+              } catch (error) {
+                console.error("Error fetching prospect for activity:", error);
+              }
             }
-          : "Unknown",
-      };
-    });
 
-    // Calculate current month prospects
-    const currentMonthProspects = currentProspects.filter((p) => {
-      // Handle the type conversion safely
-      const createdDate =
-        p.createdAt instanceof Date
-          ? p.createdAt
-          : new Date(p.createdAt as string);
-      return createdDate >= currentMonthStart;
-    }).length;
+            return {
+              _id: a._id.toString(),
+              title: a.title,
+              createdAt: a.createdAt?.toISOString() || new Date().toISOString(),
+              type: a.type,
+              dueDate: a.dueDate?.toISOString() || null,
+              prospectId: prospectData,
+            };
+          })
+        );
+      } catch (activityError) {
+        console.error("Error fetching activities:", activityError);
+        // Continue with empty activities rather than failing the entire request
+      }
 
-    // Calculate percent changes
-    const prospectGrowthPercent =
-      lastMonthProspects > 0
-        ? (
-            ((currentMonthProspects - lastMonthProspects) /
-              lastMonthProspects) *
-            100
-          ).toFixed(1)
-        : "0.0";
+      // Calculate current month prospects
+      const currentMonthProspects = currentProspects.filter((p) => {
+        // Handle the type conversion safely
+        const createdDate =
+          p.createdAt instanceof Date
+            ? p.createdAt
+            : new Date(p.createdAt as string);
+        return createdDate >= currentMonthStart;
+      }).length;
 
-    const currentWeekReminders = pendingReminders;
-    const reminderChangePercent =
-      previousWeekReminders > 0
-        ? (
-            ((currentWeekReminders - previousWeekReminders) /
-              previousWeekReminders) *
-            100
-          ).toFixed(1)
-        : "0.0";
+      // Calculate percent changes
+      const prospectGrowthPercent =
+        lastMonthProspects > 0
+          ? (
+              ((currentMonthProspects - lastMonthProspects) /
+                lastMonthProspects) *
+              100
+            ).toFixed(1)
+          : "0.0";
 
-    return NextResponse.json({
-      stats: {
-        totalProspects: currentProspects.length,
-        pendingReminders,
-        // Trend data
-        prospectGrowth: {
-          percent: prospectGrowthPercent,
-          trend: Number(prospectGrowthPercent) >= 0 ? "up" : "down",
-          comparison: "month",
+      const currentWeekReminders = pendingReminders;
+      const reminderChangePercent =
+        previousWeekReminders > 0
+          ? (
+              ((currentWeekReminders - previousWeekReminders) /
+                previousWeekReminders) *
+              100
+            ).toFixed(1)
+          : "0.0";
+
+      return NextResponse.json({
+        stats: {
+          totalProspects: currentProspects.length,
+          pendingReminders,
+          // Trend data for enrollment leads
+          enrollmentLeads: {
+            count: currentMonthProspects,
+            percent: prospectGrowthPercent,
+            trend: Number(prospectGrowthPercent) >= 0 ? "up" : "down",
+            comparison: "month",
+          },
+          // Trend data for application rate (reminders)
+          applicationRate: {
+            count: currentWeekReminders,
+            percent: reminderChangePercent,
+            trend: Number(reminderChangePercent) >= 0 ? "up" : "down",
+            comparison: "week",
+          },
+          // Program interest placeholder (since we don't have the data)
+          programInterest: {
+            topProgram: "General Program",
+            count: 0,
+            percentChange: "0.0",
+            trend: "up",
+          },
+          // Campus distribution placeholder
+          campusDistribution: {
+            topCampus: "Main Campus",
+            percent: "0.0",
+          },
+          // Lists for display
+          upcomingReminders,
+          recentActivities,
         },
-        reminderChange: {
-          percent: reminderChangePercent,
-          trend: Number(reminderChangePercent) >= 0 ? "up" : "down",
-          comparison: "week",
+      });
+    } catch (queryError) {
+      console.error("Error in dashboard queries:", queryError);
+      return NextResponse.json(
+        {
+          error: "Failed to fetch dashboard data",
+          details:
+            queryError instanceof Error
+              ? queryError.message
+              : String(queryError),
         },
-        // Lists for display
-        upcomingReminders,
-        recentActivities,
-      },
-    });
+        { status: 500 }
+      );
+    }
   } catch (error) {
     console.error("Dashboard Error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch dashboard data" },
+      {
+        error: "Failed to fetch dashboard data",
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   }
