@@ -113,16 +113,16 @@ export default function Activities({
     }
   };
 
-  // Sort activities by due date and status
+  // Sort activities by status and creation date
   const sortedActivities = [...activities].sort((a, b) => {
     // First sort by status - pending first
     if (a.status === "PENDING" && b.status !== "PENDING") return -1;
     if (a.status !== "PENDING" && b.status === "PENDING") return 1;
 
-    // Then sort by due date (ascending)
-    const dateA = a.dueDate ? new Date(a.dueDate as string).getTime() : 0;
-    const dateB = b.dueDate ? new Date(b.dueDate as string).getTime() : 0;
-    return dateA - dateB;
+    // If same status, sort by creation date (newest first)
+    const dateA = a.createdAt ? new Date(a.createdAt as string).getTime() : 0;
+    const dateB = b.createdAt ? new Date(b.createdAt as string).getTime() : 0;
+    return dateB - dateA; // Descending order (newest first)
   });
 
   return (
@@ -154,7 +154,7 @@ export default function Activities({
             {sortedActivities.map((activity: Activity) => (
               <div
                 key={activity._id}
-                className={`border rounded-lg p-4 hover:bg-accent/50 transition-colors ${
+                className={`border rounded-lg p-3 sm:p-4 hover:bg-accent/50 transition-colors ${
                   isExpired(activity.dueDate as string, activity.status)
                     ? "border-2 border-red-500 bg-red-50/10"
                     : isDueSoon(activity.dueDate as string) &&
@@ -166,16 +166,17 @@ export default function Activities({
                     : ""
                 }`}
               >
-                <div className="flex justify-between items-start gap-2">
-                  <h3 className="font-medium text-lg break-all line-clamp-2 flex-1 overflow-hidden text-wrap">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
+                  <h3 className="font-medium text-base sm:text-lg break-all line-clamp-2 flex-1 overflow-hidden text-wrap">
                     {formatUrlContent(activity.title)}
                   </h3>
-                  <div className="flex gap-2 shrink-0">
+                  <div className="flex flex-wrap gap-1 shrink-0">
                     {isExpired(activity.dueDate as string, activity.status) && (
                       <Badge
                         variant="destructive"
-                        className="whitespace-nowrap bg-red-500"
+                        className="whitespace-nowrap bg-red-500 text-[10px] sm:text-xs"
                       >
+                        <AlertCircle className="h-3 w-3 mr-1" />
                         Expired
                       </Badge>
                     )}
@@ -187,8 +188,9 @@ export default function Activities({
                       ) && (
                         <Badge
                           variant="outline"
-                          className="whitespace-nowrap border-yellow-400 text-yellow-600"
+                          className="whitespace-nowrap border-yellow-400 text-yellow-600 text-[10px] sm:text-xs"
                         >
+                          <AlertCircle className="h-3 w-3 mr-1" />
                           Due Soon
                         </Badge>
                       )}
@@ -196,8 +198,9 @@ export default function Activities({
                       activity.status === "PENDING" && (
                         <Badge
                           variant="outline"
-                          className="whitespace-nowrap border-yellow-400 text-yellow-600"
+                          className="whitespace-nowrap border-yellow-400 text-yellow-600 text-[10px] sm:text-xs"
                         >
+                          <AlertCircle className="h-3 w-3 mr-1" />
                           Almost Due
                         </Badge>
                       )}
@@ -205,7 +208,7 @@ export default function Activities({
                       variant={
                         activity.status === "COMPLETED" ? "default" : "outline"
                       }
-                      className="whitespace-nowrap"
+                      className="whitespace-nowrap text-[10px] sm:text-xs"
                     >
                       {activity.status}
                     </Badge>
@@ -213,12 +216,12 @@ export default function Activities({
                 </div>
 
                 <div className="w-full overflow-hidden">
-                  <p className="text-sm text-muted-foreground mb-2 break-all whitespace-normal text-wrap line-clamp-2">
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-2 break-all whitespace-normal text-wrap line-clamp-2">
                     {formatUrlContent(activity.description)}
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-muted-foreground">
+                <div className="grid grid-cols-1 gap-1.5 text-xs text-muted-foreground">
                   <div className="break-all overflow-hidden text-wrap">
                     <span className="font-medium whitespace-nowrap">
                       Prospect:

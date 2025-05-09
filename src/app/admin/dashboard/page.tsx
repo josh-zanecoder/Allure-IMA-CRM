@@ -25,19 +25,19 @@ const getActivityIcon = (type: string) => {
   switch (type) {
     case "Email":
       return (
-        <Mail className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-foreground" />
+        <Mail className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4 text-primary-foreground" />
       );
     case "Meeting":
       return (
-        <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-foreground" />
+        <Phone className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4 text-primary-foreground" />
       );
     case "Task":
       return (
-        <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-foreground" />
+        <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4 text-primary-foreground" />
       );
     default:
       return (
-        <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-foreground" />
+        <Plus className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4 text-primary-foreground" />
       );
   }
 };
@@ -48,11 +48,11 @@ const getCallDirectionIcon = (from: string, to: string) => {
 
   if (isOutgoing) {
     return (
-      <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-foreground" />
+      <Phone className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4 text-primary-foreground" />
     );
   } else {
     return (
-      <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-foreground rotate-180" />
+      <Phone className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4 text-primary-foreground rotate-180" />
     );
   }
 };
@@ -93,54 +93,54 @@ const ITEMS_PER_PAGE = 5;
 
 // Extract skeleton item component to reduce duplication
 const SkeletonItem = ({ isLast = false }: { isLast?: boolean }) => (
-  <div className="flex items-start gap-3 sm:gap-4">
+  <div className="flex items-start gap-2 sm:gap-3 md:gap-4">
     <div className="relative">
-      <Skeleton className="h-7 w-7 sm:h-8 sm:w-8 rounded-full" />
+      <Skeleton className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 rounded-full" />
       {!isLast && (
-        <div className="absolute left-[13px] sm:left-[15px] top-7 sm:top-8 h-[calc(100%+32px)] w-[2px] bg-border/20" />
+        <div className="absolute left-[11px] sm:left-[13px] md:left-[15px] top-6 sm:top-7 md:top-8 h-[calc(100%+24px)] sm:h-[calc(100%+28px)] md:h-[calc(100%+32px)] w-[2px] bg-border/20" />
       )}
     </div>
-    <div className="flex-1 min-w-0 space-y-2">
-      <Skeleton className="h-5 w-3/4" />
+    <div className="flex-1 min-w-0 space-y-1.5 sm:space-y-2">
+      <Skeleton className="h-4 sm:h-5 w-3/4" />
       <div className="flex items-center gap-2">
-        <Skeleton className="h-4 w-4" />
-        <Skeleton className="h-4 w-16" />
+        <Skeleton className="h-3 sm:h-4 w-3 sm:w-4" />
+        <Skeleton className="h-3 sm:h-4 w-14 sm:w-16" />
       </div>
-      <Skeleton className="h-4 w-1/2" />
+      <Skeleton className="h-3 sm:h-4 w-1/2" />
     </div>
   </div>
 );
 
 // Extract pagination skeleton
 const PaginationSkeleton = () => (
-  <div className="flex justify-between items-center mt-4">
-    <Skeleton className="h-4 w-40" />
-    <div className="flex gap-2">
-      <Skeleton className="h-8 w-8" />
-      <Skeleton className="h-8 w-20" />
-      <Skeleton className="h-8 w-8" />
+  <div className="flex justify-between items-center mt-3 sm:mt-4">
+    <Skeleton className="h-3 sm:h-4 w-28 sm:w-40" />
+    <div className="flex gap-1 sm:gap-2">
+      <Skeleton className="h-6 w-6 sm:h-8 sm:w-8" />
+      <Skeleton className="h-6 w-14 sm:h-8 sm:w-20" />
+      <Skeleton className="h-6 w-6 sm:h-8 sm:w-8" />
     </div>
   </div>
 );
 
 // Extract skeleton loader component
 const SkeletonLoader = () => (
-  <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
+  <div className="space-y-3 sm:space-y-4 md:space-y-6 p-2 sm:p-3 md:p-6">
     {/* Header Skeleton */}
-    <div className="space-y-2">
-      <Skeleton className="h-8 sm:h-9 w-64" />
-      <Skeleton className="h-5 sm:h-6 w-48" />
+    <div className="space-y-1.5 sm:space-y-2">
+      <Skeleton className="h-7 sm:h-8 md:h-9 w-48 sm:w-56 md:w-64" />
+      <Skeleton className="h-4 sm:h-5 md:h-6 w-36 sm:w-40 md:w-48" />
     </div>
 
     {/* Activity Card Skeleton */}
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
       {[1, 2].map((cardIndex) => (
         <Card key={cardIndex}>
-          <CardHeader>
-            <Skeleton className="h-7 sm:h-8 w-48" />
+          <CardHeader className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4">
+            <Skeleton className="h-5 sm:h-6 md:h-7 w-36 sm:w-40 md:w-48" />
           </CardHeader>
-          <CardContent>
-            <div className="space-y-6 sm:space-y-8">
+          <CardContent className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4">
+            <div className="space-y-4 sm:space-y-6 md:space-y-8">
               {/* Activity Item Skeletons */}
               {[1, 2, 3].map((i) => (
                 <SkeletonItem key={i} isLast={i === 3} />
@@ -156,7 +156,7 @@ const SkeletonLoader = () => (
 
 // Extract content skeleton loader
 const ContentSkeletonLoader = () => (
-  <div className="space-y-6 sm:space-y-8">
+  <div className="space-y-4 sm:space-y-6 md:space-y-8">
     {[1, 2, 3].map((i) => (
       <SkeletonItem key={i} isLast={i === 3} />
     ))}
@@ -252,69 +252,71 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
+    <div className="space-y-3 sm:space-y-4 md:space-y-6 p-2 sm:p-3 md:p-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-2 md:gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">
             Team Member Management
           </h1>
-          <p className="text-sm sm:text-base text-muted-foreground">
+          <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
             Monitor and manage your team members
           </p>
         </div>
       </div>
 
       {/* Two column layout for cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
         {/* Call Logs */}
         <Card className="h-full">
-          <CardHeader>
-            <CardTitle className="text-lg sm:text-xl">
+          <CardHeader className="px-3 sm:px-6 py-2 sm:py-4">
+            <CardTitle className="text-base sm:text-lg md:text-xl">
               Recent Call Logs
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-3 sm:px-6 py-2 sm:py-4">
             {isLoadingCallLogs ? (
               <ContentSkeletonLoader />
             ) : callLogs.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">No call logs found</p>
+              <div className="text-center py-4 sm:py-8">
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  No call logs found
+                </p>
               </div>
             ) : (
               <>
-                <div className="space-y-6 sm:space-y-8">
+                <div className="space-y-4 sm:space-y-6 md:space-y-8">
                   {callLogs.map((callLog, index) => (
                     <div
                       key={callLog._id || `call-log-${index}`}
-                      className="relative flex items-start gap-3 sm:gap-4"
+                      className="relative flex items-start gap-2 sm:gap-3 md:gap-4"
                     >
                       <div className="relative">
-                        <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-blue-500 text-white dark:text-black flex items-center justify-center">
+                        <div className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 rounded-full bg-blue-500 text-white dark:text-black flex items-center justify-center">
                           {getCallDirectionIcon(callLog.from, callLog.to)}
                         </div>
                         {index !== callLogs.length - 1 && (
-                          <div className="absolute left-[13px] sm:left-[15px] top-7 sm:top-8 h-[calc(100%+32px)] w-[2px] bg-border" />
+                          <div className="absolute left-[11px] sm:left-[13px] md:left-[15px] top-6 sm:top-7 md:top-8 h-[calc(100%+24px)] sm:h-[calc(100%+28px)] md:h-[calc(100%+32px)] w-[2px] bg-border" />
                         )}
                       </div>
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <p className="text-sm font-medium text-foreground">
+                      <div className="flex-1 min-w-0 space-y-0.5 sm:space-y-1">
+                        <p className="text-xs sm:text-sm font-medium text-foreground">
                           {formatPhoneNumber(callLog.from)} →{" "}
                           {formatPhoneNumber(callLog.to)}
                         </p>
-                        <p className="text-xs text-muted-foreground break-words">
+                        <p className="text-[10px] sm:text-xs text-muted-foreground break-words">
                           {callLog.transcription ||
                             "No transcription available"}
                         </p>
-                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                          <Clock className="h-3 w-3" />
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-muted-foreground">
+                          <Clock className="h-2.5 sm:h-3 w-2.5 sm:w-3" />
                           <time dateTime={callLog.createdAt}>
                             {format(
                               new Date(callLog.createdAt),
                               "MMM d, yyyy h:mm a"
                             )}
                           </time>
-                          <span className="px-2 py-0.5 rounded-full text-xs capitalize bg-blue-100 text-blue-800">
+                          <span className="px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs capitalize bg-blue-100 text-blue-800">
                             {callLog.from.startsWith("+112")
                               ? "Outgoing"
                               : "Incoming"}
@@ -325,8 +327,8 @@ export default function AdminDashboard() {
                   ))}
                 </div>
 
-                <div className="flex justify-between items-center mt-4">
-                  <div className="text-sm text-muted-foreground">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-3 sm:mt-4 gap-2 sm:gap-0">
+                  <div className="text-[10px] sm:text-xs text-muted-foreground">
                     {callLogs.length === 0 ? (
                       "No call logs to display"
                     ) : (
@@ -340,27 +342,29 @@ export default function AdminDashboard() {
                       </>
                     )}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-1.5 sm:gap-2">
                     <Button
                       variant="outline"
                       size="sm"
+                      className="h-6 w-6 sm:h-8 sm:w-8 p-0 sm:p-0"
                       onClick={goToPrevCallLogsPage}
                       disabled={callLogsPage === 1 || isLoadingCallLogs}
                     >
-                      <ChevronLeft className="h-4 w-4" />
+                      <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
                     </Button>
-                    <span className="text-sm py-2 px-1">
+                    <span className="text-[10px] sm:text-xs py-1.5 sm:py-2 px-1">
                       Page {callLogsPage} of {callLogsTotalPages || 1}
                     </span>
                     <Button
                       variant="outline"
                       size="sm"
+                      className="h-6 w-6 sm:h-8 sm:w-8 p-0 sm:p-0"
                       onClick={goToNextCallLogsPage}
                       disabled={
                         callLogsPage === callLogsTotalPages || isLoadingCallLogs
                       }
                     >
-                      <ChevronRight className="h-4 w-4" />
+                      <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
                     </Button>
                   </div>
                 </div>
@@ -371,29 +375,31 @@ export default function AdminDashboard() {
 
         {/* Sales Team Activity */}
         <Card className="h-full">
-          <CardHeader>
-            <CardTitle className="text-lg sm:text-xl">
+          <CardHeader className="px-3 sm:px-6 py-2 sm:py-4">
+            <CardTitle className="text-base sm:text-lg md:text-xl">
               Recent Activities
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-3 sm:px-6 py-2 sm:py-4">
             {isStoreLoading ? (
               <ContentSkeletonLoader />
             ) : activities.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">No activities found</p>
+              <div className="text-center py-4 sm:py-8">
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  No activities found
+                </p>
               </div>
             ) : (
               <>
-                <div className="space-y-6 sm:space-y-8">
+                <div className="space-y-4 sm:space-y-6 md:space-y-8">
                   {paginatedActivities.currentItems.map((activity, index) => (
                     <div
                       key={activity._id || `activity-${index}`}
-                      className="relative flex items-start gap-3 sm:gap-4"
+                      className="relative flex items-start gap-2 sm:gap-3 md:gap-4"
                     >
                       <div className="relative">
                         <div
-                          className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full ${getStatusColor(
+                          className={`h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 rounded-full ${getStatusColor(
                             activity.status || "default"
                           )} flex items-center justify-center`}
                         >
@@ -401,11 +407,11 @@ export default function AdminDashboard() {
                         </div>
                         {index !==
                           paginatedActivities.currentItems.length - 1 && (
-                          <div className="absolute left-[13px] sm:left-[15px] top-7 sm:top-8 h-[calc(100%+32px)] w-[2px] bg-border" />
+                          <div className="absolute left-[11px] sm:left-[13px] md:left-[15px] top-6 sm:top-7 md:top-8 h-[calc(100%+24px)] sm:h-[calc(100%+28px)] md:h-[calc(100%+32px)] w-[2px] bg-border" />
                         )}
                       </div>
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <p className="text-sm text-muted-foreground break-words">
+                      <div className="flex-1 min-w-0 space-y-0.5 sm:space-y-1">
+                        <p className="text-xs sm:text-sm text-muted-foreground break-words">
                           {activity.title || "No title"}{" "}
                           <span className="font-medium text-foreground">
                             -{" "}
@@ -415,11 +421,11 @@ export default function AdminDashboard() {
                               : "Unknown Prospect"}
                           </span>
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">
                           {activity.description || "No description"}
                         </p>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Clock className="h-3 w-3" />
+                        <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-muted-foreground">
+                          <Clock className="h-2.5 sm:h-3 w-2.5 sm:w-3" />
                           <time
                             dateTime={
                               activity.dueDate || new Date().toISOString()
@@ -433,7 +439,7 @@ export default function AdminDashboard() {
                               : "Unknown date"}
                           </time>
                           <span
-                            className={`px-2 py-0.5 rounded-full text-xs ${getStatusColor(
+                            className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs ${getStatusColor(
                               activity.status || "default"
                             )} bg-opacity-10 text-foreground`}
                           >
@@ -445,37 +451,39 @@ export default function AdminDashboard() {
                   ))}
                 </div>
 
-                <div className="flex justify-between items-center mt-4">
-                  <div className="text-sm text-muted-foreground">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-3 sm:mt-4 gap-2 sm:gap-0">
+                  <div className="text-[10px] sm:text-xs text-muted-foreground">
                     Showing{" "}
                     {activities.length === 0
                       ? 0
                       : paginatedActivities.startIndex + 1}
                     -{paginatedActivities.endIndex} of {activities.length}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-1.5 sm:gap-2">
                     <Button
                       variant="outline"
                       size="sm"
+                      className="h-6 w-6 sm:h-8 sm:w-8 p-0 sm:p-0"
                       onClick={goToPrevActivityPage}
                       disabled={activityPage === 1 || activities.length === 0}
                     >
-                      <ChevronLeft className="h-4 w-4" />
+                      <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
                     </Button>
-                    <span className="text-sm py-2 px-1">
+                    <span className="text-[10px] sm:text-xs py-1.5 sm:py-2 px-1">
                       Page {activities.length === 0 ? 0 : activityPage} of{" "}
                       {paginatedActivities.totalPages || 1}
                     </span>
                     <Button
                       variant="outline"
                       size="sm"
+                      className="h-6 w-6 sm:h-8 sm:w-8 p-0 sm:p-0"
                       onClick={goToNextActivityPage}
                       disabled={
                         activityPage === paginatedActivities.totalPages ||
                         activities.length === 0
                       }
                     >
-                      <ChevronRight className="h-4 w-4" />
+                      <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
                     </Button>
                   </div>
                 </div>

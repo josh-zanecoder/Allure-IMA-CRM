@@ -6,6 +6,7 @@ import { Prospect } from "@/types/prospect";
 import { formatAddress, formatPhoneNumber } from "@/utils/formatters";
 import { toast } from "sonner";
 import axios from "axios";
+import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 
 import {
   Table,
@@ -51,6 +52,7 @@ import {
   Search,
   MoreHorizontal,
   Trash2,
+  GraduationCap,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -274,11 +276,18 @@ export function ProspectList() {
                           }
                           className={
                             prospect.educationLevel
-                              ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-500"
-                              : ""
+                              ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-500 flex items-center gap-1.5"
+                              : "flex items-center gap-1.5"
                           }
                         >
-                          {prospect.educationLevel}
+                          {prospect.educationLevel ? (
+                            <>
+                              <GraduationCap className="h-3 w-3" />
+                              {prospect.educationLevel}
+                            </>
+                          ) : (
+                            "Not Specified"
+                          )}
                         </Badge>
                       </TableCell>
                       <TableCell className="hidden sm:table-cell text-right">
@@ -425,29 +434,43 @@ export function ProspectList() {
                   variant={prospect.educationLevel ? "default" : "destructive"}
                   className={
                     prospect.educationLevel
-                      ? "bg-green-100 text-green-800 text-xs"
-                      : "text-xs"
+                      ? "bg-emerald-100 text-emerald-800 text-xs flex items-center gap-1.5 px-2.5 py-1"
+                      : "text-xs flex items-center gap-1.5 px-2.5 py-1"
                   }
                 >
-                  {prospect.educationLevel}
+                  {prospect.educationLevel ? (
+                    <>
+                      <GraduationCap className="h-3 w-3" />
+                      {prospect.educationLevel}
+                    </>
+                  ) : (
+                    <>
+                      <ExclamationTriangleIcon className="h-3 w-3" />
+                      Not Specified
+                    </>
+                  )}
                 </Badge>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => handleRowClick(prospect.id)}
-                >
-                  View
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => handleMakeCall(prospect)}
-                  disabled={isCalling}
-                >
-                  Call
-                </Button>
+                <div className="grid grid-cols-1 gap-2">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => handleRowClick(prospect.id)}
+                  >
+                    <User className="mr-2 h-4 w-4" />
+                    View
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => handleMakeCall(prospect)}
+                    disabled={isCalling}
+                  >
+                    <Phone className="mr-2 h-4 w-4" />
+                    Call
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

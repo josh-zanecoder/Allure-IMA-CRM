@@ -27,6 +27,8 @@ import {
   Edit,
   Trash,
   AlertCircle,
+  Mail,
+  EyeIcon,
 } from "lucide-react";
 import {
   Table,
@@ -148,6 +150,22 @@ export default function SalespersonsPage() {
     setDeleteDialogOpen(true);
   };
 
+  // Action handlers
+  const handleViewMember = (personId: string) => {
+    router.push(`/admin/salespersons/${personId}`);
+  };
+
+  const handleCallMember = (phone: string) => {
+    // Implementation would go here
+    console.log(`Calling ${phone}...`);
+  };
+
+  const handleEmailMember = (email: string) => {
+    // Implementation would go here
+    console.log(`Emailing ${email}...`);
+    window.location.href = `mailto:${email}`;
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
@@ -200,13 +218,17 @@ export default function SalespersonsPage() {
   }
 
   return (
-    <div className="h-full space-y-6 p-8 pt-6">
+    <div className="h-full space-y-4 sm:space-y-6 p-2 sm:p-8 pt-6">
       <div className="flex flex-col space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight">Members</h1>
-        <p className="text-muted-foreground">Manage your team members</p>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+          Members
+        </h1>
+        <p className="text-sm sm:text-base text-muted-foreground">
+          Manage your team members
+        </p>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center gap-4">
+      <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
         <div className="flex-1 relative w-full sm:w-auto">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -370,6 +392,18 @@ export default function SalespersonsPage() {
                               View Details
                             </DropdownMenuItem>
                             <DropdownMenuItem
+                              onClick={() => handleCallMember(person.phone)}
+                            >
+                              <Phone className="mr-2 h-4 w-4" />
+                              Call
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleEmailMember(person.email)}
+                            >
+                              <Mail className="mr-2 h-4 w-4" />
+                              Email
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
                               variant="destructive"
                               onClick={() => openDeleteDialog(person)}
                             >
@@ -460,13 +494,13 @@ export default function SalespersonsPage() {
             </div>
           )}
 
-          {/* Mobile View */}
+          {/* Mobile View with Action Buttons */}
           {!isStoreLoading && !error && filteredSalespersons.length > 0 && (
-            <div className="block sm:hidden space-y-4">
+            <div className="block sm:hidden space-y-4 p-2">
               {currentSalespersons.map((person, index) => (
                 <div
                   key={person.id || `salesperson-mobile-${index}`}
-                  className="flex flex-col items-start gap-4 p-4 rounded-lg border"
+                  className="flex flex-col items-start gap-3 p-3 rounded-lg border"
                 >
                   <div className="flex items-center justify-between w-full">
                     <div className="flex items-center gap-3">
@@ -485,44 +519,6 @@ export default function SalespersonsPage() {
                       </div>
                     </div>
 
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreVertical className="h-4 w-4" />
-                          <span className="sr-only">Open menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() =>
-                            router.push(`/admin/salespersons/${person.id}`)
-                          }
-                        >
-                          <Edit className="mr-2 h-4 w-4" />
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          variant="destructive"
-                          onClick={() => openDeleteDialog(person)}
-                        >
-                          <Trash className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-
-                  <div className="flex flex-col items-start gap-3 w-full">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span>{person.phone}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span>
-                        {new Date(person.joinDate).toLocaleDateString()}
-                      </span>
-                    </div>
                     <Badge
                       variant={
                         person.status === "active" ? "default" : "secondary"
@@ -537,13 +533,62 @@ export default function SalespersonsPage() {
                         person.status.slice(1)}
                     </Badge>
                   </div>
+
+                  <div className="flex flex-col items-start gap-2 w-full">
+                    <div className="flex items-center gap-2 text-xs">
+                      <Phone className="h-3 w-3 text-muted-foreground" />
+                      <span>{formatPhoneNumber(person.phone)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <Calendar className="h-3 w-3 text-muted-foreground" />
+                      <span>
+                        {new Date(person.joinDate).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Mobile Action Buttons */}
+                  <div className="flex flex-wrap w-full gap-2 mt-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs flex-1"
+                      onClick={() => handleViewMember(person.id)}
+                    >
+                      <EyeIcon className="mr-1 h-3 w-3" /> View
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs flex-1"
+                      onClick={() => handleCallMember(person.phone)}
+                    >
+                      <Phone className="mr-1 h-3 w-3" /> Call
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs flex-1"
+                      onClick={() => handleEmailMember(person.email)}
+                    >
+                      <Mail className="mr-1 h-3 w-3" /> Email
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="h-8 text-xs flex-1"
+                      onClick={() => openDeleteDialog(person)}
+                    >
+                      <Trash className="mr-1 h-3 w-3" /> Delete
+                    </Button>
+                  </div>
                 </div>
               ))}
 
               {totalPages > 1 && (
-                <div className="mt-4 flex justify-center">
+                <div className="mt-4 mb-4 flex justify-center">
                   <Pagination>
-                    <PaginationContent>
+                    <PaginationContent className="flex-wrap justify-center">
                       <PaginationItem>
                         <PaginationPrevious
                           onClick={() =>
