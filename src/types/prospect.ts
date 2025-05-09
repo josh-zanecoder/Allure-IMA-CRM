@@ -48,7 +48,7 @@ export type Campus = string;
 export const CAMPUS = {
   SANTA_ANA: "Santa Ana",
   SOUTH_GATE: "South Gate",
-  ONLINE: "Online Campus",
+  ONLINE: "Online",
 };
 
 export interface User {
