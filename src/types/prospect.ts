@@ -14,16 +14,14 @@ export enum Gender {
 }
 
 export enum Interest {
-  BUSINESS = "Business",
-  COMPUTER_SCIENCE = "Computer Science",
-  ENGINEERING = "Engineering",
-  HEALTHCARE = "Healthcare",
-  ARTS = "Arts",
-  EDUCATION = "Education",
-  LAW = "Law",
-  SCIENCE = "Science",
-  SOCIAL_SCIENCE = "Social Science",
-  OTHER = "Other",
+  INTRO_MUA = "Intro MUA",
+  PRO_MUA = "Pro MUA",
+  EYELASH_EXTENSION = "Eyelash Extension",
+  MICROBLADING = "Microblading",
+  MICROSHADING = "Microshading",
+  HAIRSTYLING = "Hairstyling",
+  ESTHETICIAN = "Esthetician",
+  COSMETOLOGY = "Cosmetology",
 }
 
 export enum Status {
@@ -48,11 +46,8 @@ export type Campus = string;
 
 // Define constants for standard campus values but don't use enum
 export const CAMPUS = {
-  MAIN: "Main Campus",
-  DOWNTOWN: "Downtown Campus",
-  WEST: "West Campus",
-  NORTH: "North Campus",
-  SOUTH: "South Campus",
+  SANTA_ANA: "Santa Ana",
+  SOUTH_GATE: "South Gate",
   ONLINE: "Online Campus",
 };
 
