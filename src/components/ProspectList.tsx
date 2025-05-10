@@ -313,7 +313,6 @@ export function ProspectList() {
                               size="sm"
                               className="h-auto p-1.5 text-sm font-medium"
                               onMouseEnter={(e) => {
-                                const rect = e.currentTarget.getBoundingClientRect();
                                 setExpandedInterests(prev => ({
                                   ...prev,
                                   [prospect.id]: true
@@ -326,11 +325,16 @@ export function ProspectList() {
                                 }));
                               }}
                             >
-                              <span>
-                                {prospect.interests.length} Program{prospect.interests.length > 1 ? "s" : ""}
+                              <span className="flex items-center gap-1.5">
+                                {prospect.interests[0]}
+                                {prospect.interests.length > 1 && (
+                                  <span className="text-xs text-muted-foreground">
+                                    +{prospect.interests.length - 1} more
+                                  </span>
+                                )}
                               </span>
                             </Button>
-                            {expandedInterests[prospect.id] && (
+                            {expandedInterests[prospect.id] && prospect.interests.length > 1 && (
                               <Portal>
                                 <div 
                                   className="fixed z-[100] rounded-md shadow-lg bg-popover border border-border animate-in fade-in-0 zoom-in-95"
@@ -353,7 +357,7 @@ export function ProspectList() {
                                   }}
                                 >
                                   <div className="py-2">
-                                    {prospect.interests.map((interest, index) => (
+                                    {prospect.interests.slice(1).map((interest, index) => (
                                       <div
                                         key={index}
                                         className="px-4 py-2 text-sm hover:bg-accent text-foreground"
