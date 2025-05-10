@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { usePaginationStore } from "@/store/usePaginationStore";
 import { useCallStore } from "@/store/useCallStore";
@@ -53,12 +53,15 @@ import {
   MoreHorizontal,
   Trash2,
   GraduationCap,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/contexts/AuthContext";
 
 // Utility function to remove special characters from phone number
 const unformatPhoneNumber = (phone: string) => {
-  return phone.replace(/[^\d+]/g, '').replace(/^\+1/, '');
+  return phone.replace(/[^\d+]/g, "").replace(/^\+1/, "");
 };
 
 export function ProspectList() {
@@ -75,6 +78,10 @@ export function ProspectList() {
   const [prospectToDelete, setProspectToDelete] = useState<Prospect | null>(
     null
   );
+  const [expandedInterests, setExpandedInterests] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const dropdownRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   const handleRowClick = (prospectId: string) => {
     router.push(`/salesperson/prospects/${prospectId}/details`);
@@ -135,6 +142,30 @@ export function ProspectList() {
     }
   };
 
+  const toggleInterests = (prospectId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedInterests((prev) => ({
+      ...prev,
+      [prospectId]: !prev[prospectId],
+    }));
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      Object.entries(dropdownRefs.current).forEach(([prospectId, ref]) => {
+        if (ref && !ref.contains(event.target as Node)) {
+          setExpandedInterests((prev) => ({
+            ...prev,
+            [prospectId]: false,
+          }));
+        }
+      });
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   // Prevent unnecessary API calls when no prospects are found
   useEffect(() => {
     // Only log the empty state once to avoid console spam
@@ -154,10 +185,11 @@ export function ProspectList() {
                 <TableHead>Status</TableHead>
                 <TableHead>Full Name</TableHead>
                 <TableHead className="hidden sm:table-cell">Contact</TableHead>
-                <TableHead className="hidden md:table-cell">Location</TableHead>
                 <TableHead className="hidden md:table-cell">
-                  Education Level
+                  Programs interested
                 </TableHead>
+                <TableHead className="hidden md:table-cell">Campus</TableHead>
+                <TableHead className="hidden md:table-cell">City</TableHead>
                 <TableHead className="hidden sm:table-cell text-right">
                   Last Contact
                 </TableHead>
@@ -217,11 +249,12 @@ export function ProspectList() {
                       Contact
                     </TableHead>
                     <TableHead className="hidden md:table-cell">
-                      Location
+                      Programs interested
                     </TableHead>
                     <TableHead className="hidden md:table-cell">
-                      Education Level
+                      Campus
                     </TableHead>
+                    <TableHead className="hidden md:table-cell">City</TableHead>
                     <TableHead className="hidden sm:table-cell text-right">
                       Last Contact
                     </TableHead>
@@ -265,30 +298,89 @@ export function ProspectList() {
                         </Button>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
-                        <div className="flex flex-col">
-                          <span>{formatAddress(prospect.address)}</span>
-                        </div>
+                        {prospect.interests &&
+                        Array.isArray(prospect.interests) &&
+                        prospect.interests.length > 0 ? (
+                          <div
+                            className="relative"
+                            ref={(el) => {
+                              if (el) {
+                                dropdownRefs.current[prospect.id] = el;
+                              } else {
+                                delete dropdownRefs.current[prospect.id];
+                              }
+                            }}
+                          >
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-auto p-1.5 text-sm font-medium"
+                              onClick={(e) => toggleInterests(prospect.id, e)}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span>
+                                  {expandedInterests[prospect.id]
+                                    ? "Hide Programs"
+                                    : `${prospect.interests.length} Program${
+                                        prospect.interests.length > 1 ? "s" : ""
+                                      }`}
+                                </span>
+                                {expandedInterests[prospect.id] ? (
+                                  <ChevronUp className="h-4 w-4" />
+                                ) : (
+                                  <ChevronDown className="h-4 w-4" />
+                                )}
+                              </div>
+                            </Button>
+
+                            {expandedInterests[prospect.id] && (
+                              <div className="absolute z-10 mt-1 w-64 rounded-md shadow-lg bg-popover border border-border">
+                                <ScrollArea className="h-auto max-h-48">
+                                  <div className="py-2">
+                                    {prospect.interests.map(
+                                      (interest, index) => (
+                                        <div
+                                          key={index}
+                                          className="px-4 py-2 text-sm hover:bg-accent text-foreground"
+                                        >
+                                          {interest}
+                                        </div>
+                                      )
+                                    )}
+                                  </div>
+                                </ScrollArea>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">
+                            No programs selected
+                          </span>
+                        )}
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         <Badge
-                          variant={
-                            prospect.educationLevel ? "outline" : "destructive"
-                          }
+                          variant={prospect.campus ? "outline" : "destructive"}
                           className={
-                            prospect.educationLevel
+                            prospect.campus
                               ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-500 flex items-center gap-1.5"
                               : "flex items-center gap-1.5"
                           }
                         >
-                          {prospect.educationLevel ? (
+                          {prospect.campus ? (
                             <>
                               <GraduationCap className="h-3 w-3" />
-                              {prospect.educationLevel}
+                              {prospect.campus}
                             </>
                           ) : (
                             "Not Specified"
                           )}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <div className="flex flex-col">
+                          <span>{prospect.address?.city}</span>
+                        </div>
                       </TableCell>
                       <TableCell className="hidden sm:table-cell text-right">
                         {new Date(
@@ -427,6 +519,20 @@ export function ProspectList() {
                   <User className="h-4 w-4 text-muted-foreground" />
                   <span>Assigned to {prospect.assignedTo?.email}</span>
                 </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2 mt-3">
+                {prospect.interests &&
+                  Array.isArray(prospect.interests) &&
+                  prospect.interests.map((interest, index) => (
+                    <Badge
+                      key={index}
+                      variant="secondary"
+                      className="text-sm py-1 px-3"
+                    >
+                      {interest}
+                    </Badge>
+                  ))}
               </div>
 
               <div className="flex flex-col gap-2 pt-2">
