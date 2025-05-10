@@ -2,7 +2,7 @@ name: Allure Deployment
 
 on:
   push:
-    branches: [main]
+    branches: [feature/service-account]
   workflow_dispatch:
 
 env:
@@ -39,6 +39,34 @@ jobs:
         uses: google-github-actions/auth@v1
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Fetch and setup Google Cloud credentials
+        run: |
+          echo "Fetching Google Cloud credentials from Secret Manager"
+          
+          # Create credentials directory
+          mkdir -p credentials
+          
+          # Fetch credentials from Secret Manager
+          gcloud secrets versions access latest --secret="task-api-credentials" --project=${{ env.PROJECT_ID }} > credentials/task-api-service-account-key.json
+          
+          # Verify the credentials file was created
+          if [ -f "credentials/task-api-service-account-key.json" ]; then
+            echo "Credentials file created successfully"
+            
+            # Verify credentials content
+            echo "Verifying Task API credentials..."
+            if grep -q "type" "credentials/task-api-service-account-key.json" && grep -q "project_id" "credentials/task-api-service-account-key.json"; then
+              echo "✅ Task API credentials verified - contains required fields"
+              echo "Project ID in credentials: $(grep -o '"project_id": "[^"]*"' credentials/task-api-service-account-key.json | cut -d'"' -f4)"
+            else
+              echo "❌ Task API credentials verification failed - missing required fields"
+              exit 1
+            fi
+          else
+            echo "Failed to create credentials file"
+            exit 1
+          fi
 
       - name: Fetch environment variables from Secret Manager
         id: secrets
