@@ -7,6 +7,7 @@ import { formatAddress, formatPhoneNumber } from "@/utils/formatters";
 import { toast } from "sonner";
 import axios from "axios";
 import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+import { Portal } from "@radix-ui/react-portal";
 
 import {
   Table,
@@ -238,8 +239,8 @@ export function ProspectList() {
       <div className="hidden sm:block">
         <Card>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table className="min-w-full">
+            <div className="overflow-visible">
+              <Table className="min-w-full relative">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-5"></TableHead>
@@ -301,55 +302,68 @@ export function ProspectList() {
                         {prospect.interests &&
                         Array.isArray(prospect.interests) &&
                         prospect.interests.length > 0 ? (
-                          <div
+                          <div 
                             className="relative"
                             ref={(el) => {
-                              if (el) {
-                                dropdownRefs.current[prospect.id] = el;
-                              } else {
-                                delete dropdownRefs.current[prospect.id];
-                              }
+                              dropdownRefs.current[prospect.id] = el;
                             }}
                           >
                             <Button
                               variant="ghost"
                               size="sm"
                               className="h-auto p-1.5 text-sm font-medium"
-                              onClick={(e) => toggleInterests(prospect.id, e)}
+                              onMouseEnter={(e) => {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                setExpandedInterests(prev => ({
+                                  ...prev,
+                                  [prospect.id]: true
+                                }));
+                              }}
+                              onMouseLeave={() => {
+                                setExpandedInterests(prev => ({
+                                  ...prev,
+                                  [prospect.id]: false
+                                }));
+                              }}
                             >
-                              <div className="flex items-center gap-2">
-                                <span>
-                                  {expandedInterests[prospect.id]
-                                    ? "Hide Programs"
-                                    : `${prospect.interests.length} Program${
-                                        prospect.interests.length > 1 ? "s" : ""
-                                      }`}
-                                </span>
-                                {expandedInterests[prospect.id] ? (
-                                  <ChevronUp className="h-4 w-4" />
-                                ) : (
-                                  <ChevronDown className="h-4 w-4" />
-                                )}
-                              </div>
+                              <span>
+                                {prospect.interests.length} Program{prospect.interests.length > 1 ? "s" : ""}
+                              </span>
                             </Button>
-
                             {expandedInterests[prospect.id] && (
-                              <div className="absolute z-10 mt-1 w-64 rounded-md shadow-lg bg-popover border border-border">
-                                <ScrollArea className="h-auto max-h-48">
+                              <Portal>
+                                <div 
+                                  className="fixed z-[100] rounded-md shadow-lg bg-popover border border-border animate-in fade-in-0 zoom-in-95"
+                                  style={{
+                                    width: "256px",
+                                    left: dropdownRefs.current[prospect.id]?.getBoundingClientRect().left || 0,
+                                    bottom: window.innerHeight - (dropdownRefs.current[prospect.id]?.getBoundingClientRect().top || 0) + 8,
+                                  }}
+                                  onMouseEnter={() => {
+                                    setExpandedInterests(prev => ({
+                                      ...prev,
+                                      [prospect.id]: true
+                                    }));
+                                  }}
+                                  onMouseLeave={() => {
+                                    setExpandedInterests(prev => ({
+                                      ...prev,
+                                      [prospect.id]: false
+                                    }));
+                                  }}
+                                >
                                   <div className="py-2">
-                                    {prospect.interests.map(
-                                      (interest, index) => (
-                                        <div
-                                          key={index}
-                                          className="px-4 py-2 text-sm hover:bg-accent text-foreground"
-                                        >
-                                          {interest}
-                                        </div>
-                                      )
-                                    )}
+                                    {prospect.interests.map((interest, index) => (
+                                      <div
+                                        key={index}
+                                        className="px-4 py-2 text-sm hover:bg-accent text-foreground"
+                                      >
+                                        {interest}
+                                      </div>
+                                    ))}
                                   </div>
-                                </ScrollArea>
-                              </div>
+                                </div>
+                              </Portal>
                             )}
                           </div>
                         ) : (
@@ -402,7 +416,11 @@ export function ProspectList() {
                               <span className="sr-only">Open menu</span>
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
+                          <DropdownMenuContent
+                            align="end"
+                            className="z-50 w-56"
+                            sideOffset={5}
+                          >
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation();
